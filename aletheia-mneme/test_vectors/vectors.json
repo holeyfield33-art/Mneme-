@@ -1,0 +1,111 @@
+{
+  "spec_version": "1",
+  "vectors_version": "3",
+  "frozen_date": "2026-02-20",
+  "vectors": [
+    {
+      "vector_id": "POS-001",
+      "description": "Basic memory object with all standard fields",
+      "input": {
+        "_helios_schema_version": "1",
+        "category": "project",
+        "created_at": "2025-01-15T10:30:00.000Z",
+        "key": "test/basic_memory",
+        "relationships": [{"key": "project/helios", "type": "related_to"}],
+        "source": "user",
+        "value": "This is a test memory for hash verification."
+      },
+      "hash": "c3262407645dcdbd1cede212fa0448a3adb2f915f762540c32e0050bbf65e781",
+      "vector_type": "positive",
+      "expected_outcome": "ACCEPT",
+      "rejection_code": null
+    },
+    {
+      "vector_id": "POS-002",
+      "description": "Verifies keys are sorted lexicographically regardless of input order",
+      "input": {
+        "_helios_schema_version": "1",
+        "value": "Key ordering test value",
+        "source": "system",
+        "key": "test/key_ordering",
+        "created_at": "2025-06-01T00:00:00.000Z",
+        "category": "config",
+        "relationships": []
+      },
+      "hash": "694cafaa80dd0121a4c4415ac44793fee17104d02756b3c1456dd79fc467c1d0",
+      "vector_type": "positive",
+      "expected_outcome": "ACCEPT",
+      "rejection_code": null
+    },
+    {
+      "vector_id": "POS-003",
+      "description": "Verifies NFC normalization produces consistent hash for NFD input",
+      "input": {
+        "_helios_schema_version": "1",
+        "category": "test",
+        "created_at": "2025-03-20T14:15:00.000Z",
+        "key": "test/unicode_caf\u00e9",
+        "relationships": [],
+        "source": "user",
+        "value": "caf\u00e9 r\u00e9sum\u00e9"
+      },
+      "hash": "d7b4f1c46600c6b7f6733e866455cfa3c5646b6e63625a2107a6a57a36be486c",
+      "vector_type": "positive",
+      "expected_outcome": "ACCEPT",
+      "rejection_code": null
+    },
+    {
+      "vector_id": "POS-004",
+      "description": "Verifies relationships are sorted by key then type",
+      "input": {
+        "_helios_schema_version": "1",
+        "category": "workflow",
+        "created_at": "2025-02-28T08:45:00.000Z",
+        "key": "test/relationship_sorting",
+        "relationships": [
+          {"key": "z_module", "type": "depends_on"},
+          {"key": "a_module", "type": "related_to"},
+          {"key": "a_module", "type": "blocks"}
+        ],
+        "source": "user",
+        "value": "Testing relationship sort order"
+      },
+      "hash": "5e43f9576ec448e9111856b8e0f95593e4aa427ba9ec71cb3a6b574a91719558",
+      "vector_type": "positive",
+      "expected_outcome": "ACCEPT",
+      "rejection_code": null
+    },
+    {
+      "vector_id": "POS-005",
+      "description": "Valid UTC millisecond timestamp with native boolean value",
+      "input": {
+        "_helios_schema_version": "1",
+        "category": "flags",
+        "created_at": "2025-12-25T23:59:59.999Z",
+        "key": "test/boolean_value",
+        "relationships": [],
+        "source": "system",
+        "value": true
+      },
+      "hash": "84c6d544a9ee3b9c1bd48a17d8835f25a7df62cd520f78f12fa49810b9e35945",
+      "vector_type": "positive",
+      "expected_outcome": "ACCEPT",
+      "rejection_code": null
+    },
+    {
+      "vector_id": "NEG-001",
+      "input": {"_helios_schema_version": "1","category": "test","created_at": "2025-01-01T00:00:00.000Z","key": "test/float_top_level","relationships": [],"source": "user","value": 3.14},
+      "hash": null, "vector_type": "negative", "expected_outcome": "REJECT", "rejection_code": "CANON_ERR_FLOAT_PROHIBITED"
+    },
+    {
+      "vector_id": "NEG-004",
+      "input": {"_helios_schema_version": "1","category": "test","created_at": "2025-01-01T00:00:00.000Z","key": "test/null_top_level","relationships": [],"source": "user","value": null},
+      "hash": null, "vector_type": "negative", "expected_outcome": "REJECT", "rejection_code": "CANON_ERR_NULL_PROHIBITED"
+    },
+    {
+      "vector_id": "NEG-010",
+      "input": {"category": "test","created_at": "2025-01-01T00:00:00.000Z","key": "test/schema_version_missing","relationships": [],"source": "user","value": "test"},
+      "hash": null, "vector_type": "negative", "expected_outcome": "REJECT", "rejection_code": "CANON_ERR_SCHEMA_VERSION_MISSING"
+    }
+  ]
+}
