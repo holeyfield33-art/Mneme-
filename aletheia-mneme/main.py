@@ -25,6 +25,14 @@ async def lifespan(app: FastAPI):
     if env.PERSONAL_MODE and not env.PERSONAL_API_KEY:
         raise RuntimeError("PERSONAL_API_KEY required when PERSONAL_MODE=true")
     await database.init_pool(env.DATABASE_URL)
+    if env.PERSONAL_MODE:
+        async with database.pool.acquire() as conn:
+            await conn.execute(
+                "INSERT INTO namespaces (id, tier, is_active) "
+                "VALUES ('personal', 'premium', TRUE) "
+                "ON CONFLICT (id) DO NOTHING"
+            )
+        log.info("personal_namespace_ready")
     log.info("app_started", product="Aletheia Mneme", version="1.0.0")
     yield
     await database.close_pool()
