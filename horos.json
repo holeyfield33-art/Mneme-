@@ -1,4 +1,8 @@
 {
   "python_source_roots": ["aletheia-mneme"],
-  "external_modules": ["fastapi", "starlette", "pydantic", "uvicorn", "asyncpg", "pgvector", "openai", "stripe", "resend", "httpx"]
+  "external_modules": [
+    "argon2", "asyncpg", "fastapi", "httpx", "mcp", "openai",
+    "pgvector", "pydantic", "pytest", "resend", "sentence_transformers",
+    "slowapi", "starlette", "stripe", "structlog", "uvicorn"
+  ]
 }
