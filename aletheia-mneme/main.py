@@ -1,6 +1,7 @@
 import asyncpg
 import structlog
 from fastapi import FastAPI, Request, HTTPException
+from urllib.parse import parse_qs
 from fastapi.responses import JSONResponse
 from contextlib import asynccontextmanager
 from slowapi import Limiter
@@ -85,8 +86,22 @@ class MCPAuthMiddleware:
             headers = dict(scope.get("headers", []))
             auth_header = headers.get(b"authorization", b"").decode()
 
+            api_key = None
+            
+            # Try Bearer token first
             if auth_header.startswith("Bearer "):
                 api_key = auth_header[7:]
+            else:
+                # Fallback: support api_key passed as a query parameter for sites that
+                # only accept a URL input (e.g. https://host/mcp?api_key=KEY).
+                qs = scope.get("query_string", b"").decode()
+                if qs:
+                    params = parse_qs(qs)
+                    vals = params.get("api_key") or params.get("key") or params.get("token")
+                    if vals:
+                        api_key = vals[0]
+            
+            if api_key:
                 async with database.pool.acquire() as conn:
                     ns = await get_namespace_from_key(api_key, conn)
                     if ns:
@@ -112,7 +127,7 @@ class MCPAuthMiddleware:
             })
             await send({
                 "type": "http.response.body",
-                "body": b'{"error":"Authentication required. Provide Bearer token."}',
+                "body": b'{"error":"Authentication required. Provide Bearer token or ?api_key=KEY query param."}',
             })
         else:
             # Allow websocket/lifespan through
