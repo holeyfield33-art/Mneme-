@@ -4,12 +4,9 @@ import os
 # ── Set ALL required env vars for testing ──────────────────────
 os.environ["DATABASE_URL"] = "postgresql://test:test@localhost:5432/test_mneme"
 os.environ["OPENAI_API_KEY"] = "sk-test-00000000000000000000000000000000000000000000"
-os.environ["STRIPE_SECRET_KEY"] = "sk_test_00000000000000000000000000"
-os.environ["STRIPE_WEBHOOK_SECRET"] = "whsec_test_00000000000000000000000000"
-os.environ["STRIPE_PRICE_ID"] = "price_test_00000000000000000000"
 os.environ["RESEND_API_KEY"] = "re_test_00000000000000000000000000"
 os.environ["EMAIL_FROM"] = "test@aletheia-test.dev"
-os.environ["APPNEST_RELAY_SECRET"] = "test_relay_secret_token_for_testing"
+os.environ["RELAY_SECRET"] = "test_relay_secret_token_for_testing"
 os.environ["PERSONAL_MODE"] = "false"
 os.environ["HELIOS_ENABLED"] = "true"
 

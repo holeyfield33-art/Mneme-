@@ -11,7 +11,7 @@ router = APIRouter()
 
 def _verify_relay_auth(request: Request):
     auth_header = request.headers.get("Authorization", "")
-    expected = f"Bearer {env.APPNEST_RELAY_SECRET}"
+    expected = f"Bearer {env.RELAY_SECRET}"
     if not secrets.compare_digest(auth_header, expected):
         raise HTTPException(401, "Invalid relay token")
 

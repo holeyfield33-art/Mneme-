@@ -1,9 +1,7 @@
-"""Tool tier gating and wiring tests.
+"""Tool wiring tests.
 
 Tests:
-  - All 8 free tools callable by free tier
-  - All 8 premium tools rejected by free tier
-  - All 16 tools callable by premium tier
+  - All 16 tools callable by any namespace (no tier gating)
   - Tool function wiring (each tool calls correct storage function)
   - Edge cases: missing namespace, empty results
 """
@@ -56,25 +54,15 @@ class TestFreeTools:
             assert "error" in result
 
     @pytest.mark.asyncio
-    async def test_list_memories_free_capped(self):
+    async def test_list_memories_uncapped(self):
         db = MockDB()
-        ns = {"id": "ns_free", "tier": "free"}
-        _setup_context(ns, db)
-        with patch("tools.storage.list_memories", new_callable=AsyncMock,
-                    return_value=[]) as mock_list:
-            await tools.list_memories(limit=100)
-            # Free tier should cap to 50
-            mock_list.assert_called_once_with("ns_free", None, 50, 0, db)
-
-    @pytest.mark.asyncio
-    async def test_list_memories_premium_uncapped(self):
-        db = MockDB()
-        ns = {"id": "ns_prem", "tier": "premium"}
+        ns = {"id": "ns_user", "tier": "premium"}
         _setup_context(ns, db)
         with patch("tools.storage.list_memories", new_callable=AsyncMock,
                     return_value=[]) as mock_list:
             await tools.list_memories(limit=200)
-            mock_list.assert_called_once_with("ns_prem", None, 200, 0, db)
+            # No tier cap — the requested limit is passed straight through
+            mock_list.assert_called_once_with("ns_user", None, 200, 0, db)
 
     @pytest.mark.asyncio
     async def test_search_memory(self):
@@ -132,69 +120,9 @@ class TestFreeTools:
         assert "general" in result["categories"]
 
 
-# ── Premium Tool Gating ──────────────────────────────────────
+# ── Advanced Tool Access (no gating — available to all) ──────
 
-class TestPremiumGating:
-    @pytest.mark.asyncio
-    async def test_semantic_search_blocked_on_free(self):
-        ns = {"id": "ns_free", "tier": "free"}
-        _setup_context(ns, MockDB())
-        with pytest.raises(ValueError, match="Premium subscription required"):
-            await tools.semantic_search("query")
-
-    @pytest.mark.asyncio
-    async def test_relate_memories_blocked_on_free(self):
-        ns = {"id": "ns_free", "tier": "free"}
-        _setup_context(ns, MockDB())
-        with pytest.raises(ValueError, match="Premium subscription required"):
-            await tools.relate_memories("k1", "k2", "related_to")
-
-    @pytest.mark.asyncio
-    async def test_get_related_blocked_on_free(self):
-        ns = {"id": "ns_free", "tier": "free"}
-        _setup_context(ns, MockDB())
-        with pytest.raises(ValueError, match="Premium subscription required"):
-            await tools.get_related("k1")
-
-    @pytest.mark.asyncio
-    async def test_memory_history_blocked_on_free(self):
-        ns = {"id": "ns_free", "tier": "free"}
-        _setup_context(ns, MockDB())
-        with pytest.raises(ValueError, match="Premium subscription required"):
-            await tools.memory_history("k1")
-
-    @pytest.mark.asyncio
-    async def test_rollback_memory_blocked_on_free(self):
-        ns = {"id": "ns_free", "tier": "free"}
-        _setup_context(ns, MockDB())
-        with pytest.raises(ValueError, match="Premium subscription required"):
-            await tools.rollback_memory("k1", 1)
-
-    @pytest.mark.asyncio
-    async def test_export_memories_blocked_on_free(self):
-        ns = {"id": "ns_free", "tier": "free"}
-        _setup_context(ns, MockDB())
-        with pytest.raises(ValueError, match="Premium subscription required"):
-            await tools.export_memories()
-
-    @pytest.mark.asyncio
-    async def test_verify_memory_blocked_on_free(self):
-        ns = {"id": "ns_free", "tier": "free"}
-        _setup_context(ns, MockDB())
-        with pytest.raises(ValueError, match="Premium subscription required"):
-            await tools.verify_memory("k1")
-
-    @pytest.mark.asyncio
-    async def test_cloud_sync_blocked_on_free(self):
-        ns = {"id": "ns_free", "tier": "free"}
-        _setup_context(ns, MockDB())
-        with pytest.raises(ValueError, match="Premium subscription required"):
-            await tools.cloud_sync("https://example.com")
-
-
-# ── Premium Tool Access ──────────────────────────────────────
-
-class TestPremiumToolAccess:
+class TestAdvancedToolAccess:
     @pytest.mark.asyncio
     async def test_semantic_search_allowed_on_premium(self):
         db = MockDB()

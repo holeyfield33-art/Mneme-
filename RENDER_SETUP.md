@@ -39,14 +39,11 @@ Set these in Render's **Environment** tab (mark sensitive ones as **secrets**):
 
 ### API Keys (get from respective platforms)
 - **OPENAI_API_KEY** — OpenAI API key for embeddings and LLM calls
-- **STRIPE_SECRET_KEY** — Stripe secret key for payments
-- **STRIPE_WEBHOOK_SECRET** — Stripe webhook signing secret (set up in Stripe dashboard)
-- **STRIPE_PRICE_ID** — Stripe price ID (e.g., `price_xxxxx`)
 - **RESEND_API_KEY** — Resend API key for email sending
 - **EMAIL_FROM** — Sender email address (e.g., `noreply@yourapp.com`)
 
-### AppNest/Relay
-- **APPNEST_RELAY_SECRET** — Shared secret for relay operations (generate a strong random string)
+### Relay
+- **RELAY_SECRET** — Shared secret for relay operations (generate a strong random string)
 
 ## Optional Environment Variables
 
@@ -104,15 +101,19 @@ https://your-render-url.onrender.com/mcp?api_key=YOUR_API_KEY
 
 Both `api_key`, `key`, and `token` query parameter names are supported.
 
-## Stripe Integration
+## Issuing API Keys
 
-1. Set up webhook in Stripe Dashboard:
-   - Endpoint URL: `https://your-render-url.onrender.com/billing/webhook`
-   - Events: `checkout.session.completed`, `customer.subscription.deleted`
-   - Copy signing secret → **STRIPE_WEBHOOK_SECRET**
+Mneme is completely free — there is no billing. Mint a full-access key with the
+public signup endpoint:
 
-2. Create a product and price:
-   - Get the Price ID → **STRIPE_PRICE_ID**
+```bash
+curl -X POST https://your-render-url.onrender.com/signup \
+  -H "Content-Type: application/json" \
+  -d '{"email":"you@example.com"}'
+```
+
+The response contains your `api_key` (also emailed via Resend). For single-operator
+deployments, set `PERSONAL_MODE=true` and a `PERSONAL_API_KEY` instead.
 
 ## Render.yaml File Format
 
@@ -130,17 +131,11 @@ services:
         sync: false
       - key: OPENAI_API_KEY
         sync: false
-      - key: STRIPE_SECRET_KEY
-        sync: false
-      - key: STRIPE_WEBHOOK_SECRET
-        sync: false
-      - key: STRIPE_PRICE_ID
-        sync: false
       - key: RESEND_API_KEY
         sync: false
       - key: EMAIL_FROM
         sync: false
-      - key: APPNEST_RELAY_SECRET
+      - key: RELAY_SECRET
         sync: false
       - key: PERSONAL_MODE
         value: false
@@ -153,7 +148,7 @@ The app is analyzed via **horos** (context graph generator). Key configuration i
 ```json
 {
   "python_source_roots": ["aletheia-mneme"],
-  "external_modules": ["fastapi", "starlette", "pydantic", "uvicorn", "asyncpg", "pgvector", "openai", "stripe", "resend", "httpx"]
+  "external_modules": ["fastapi", "starlette", "pydantic", "uvicorn", "asyncpg", "pgvector", "openai", "resend", "httpx"]
 }
 ```
 
