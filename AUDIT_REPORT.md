@@ -64,7 +64,7 @@ do not invalidate integrity proofs.
 
 **Implementation:**
 
-```
+```text
 env.py: DATABASE_URL loaded lazily via __getattr__ + os.environ
     ↓
 db.py: asyncpg.create_pool(env.DATABASE_URL, min_size=2, max_size=10)
@@ -76,7 +76,7 @@ MCPAuthMiddleware: Acquires connection from pool, sets ContextVar
 tools.py: _db() reads ContextVar — zero parameter passing
 ```
 
-**Assessment: PASS**
+#### Assessment: PASS
 
 - The `DATABASE_URL` is read **once** at pool creation time and never re-read at runtime.
 - Connection pooling (`min_size=2`, `max_size=10`) prevents connection exhaustion.
@@ -199,7 +199,7 @@ The `/relay` endpoint is gated by a dedicated `RELAY_SECRET` bearer token, compa
 constant time via `secrets.compare_digest`. It is independent of user API keys, so relay
 access cannot be obtained with a tenant key (and vice versa).
 
-**Verdict: PASS**
+**Verdict: PASS** — Constant-time comparison; relay access isolated from user API keys.
 
 ---
 
@@ -320,4 +320,4 @@ alternative to the monolithic proxy pattern that led to breaches like LiteLLM.
 
 ---
 
-*Report generated for TMRP Architecture Review — Aletheia Sovereign Systems*
+Report generated for TMRP Architecture Review — Aletheia Sovereign Systems

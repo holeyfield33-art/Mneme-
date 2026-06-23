@@ -26,7 +26,7 @@ Part of the **Aletheia Sovereign Systems** product family — the memory layer o
 
 ## Architecture
 
-```
+```text
 ┌──────────────┐   ┌──────────────┐   ┌───────────────┐
 │  MCP Client  │──▶│  FastAPI +   │──▶│  PostgreSQL   │
 │  (AI Agent)  │   │  FastMCP     │   │  + pgvector   │
@@ -43,6 +43,7 @@ Part of the **Aletheia Sovereign Systems** product family — the memory layer o
 ## Tools (16 total — all free)
 
 ### Core (8 tools)
+
 | Tool | Description |
 |------|-------------|
 | `store_memory` | Store a memory with key, value, category |
@@ -55,6 +56,7 @@ Part of the **Aletheia Sovereign Systems** product family — the memory layer o
 | `get_stats` | Usage stats |
 
 ### Advanced (8 tools)
+
 | Tool | Description |
 |------|-------------|
 | `semantic_search` | Vector cosine similarity search |

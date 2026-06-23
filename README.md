@@ -49,7 +49,7 @@ air-gapped server, or a Kubernetes pod.
 Mneme's persistence layer is purpose-built around three storage concerns, each matched
 to the access pattern it serves:
 
-```
+```text
 ┌─────────────────────────────────────────────────────────────────┐
 │                        AI Agent (MCP Client)                    │
 │                  Authorization: Bearer mneme_p_…                │
@@ -104,7 +104,7 @@ because an embedding provider is down.
 
 ## X-API-Key Security Model
 
-```
+```text
 Client presents Bearer key (mneme_f_… or mneme_p_…)
         │
         ▼
@@ -186,6 +186,7 @@ validation.
 Every API key has full access to all 16 tools. There are no tiers or paywalls.
 
 ### Core (8 tools)
+
 | Tool | Description |
 |------|-------------|
 | `store_memory` | Store a memory with key, value, category |
@@ -198,6 +199,7 @@ Every API key has full access to all 16 tools. There are no tiers or paywalls.
 | `get_stats` | Usage stats |
 
 ### Advanced (8 tools)
+
 | Tool | Description |
 |------|-------------|
 | `semantic_search` | Vector cosine similarity search |

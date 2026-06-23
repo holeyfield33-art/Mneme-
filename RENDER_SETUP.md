@@ -28,21 +28,26 @@ The app is configured in [`aletheia-mneme/render.yaml`](aletheia-mneme/render.ya
 Set these in Render's **Environment** tab (mark sensitive ones as **secrets**):
 
 ### Database
-- **DATABASE_URL**  
+
+- **DATABASE_URL**
   Postgres connection string. Example format:
-  ```
+
+  ```text
   postgres://user:password@host.render.com:5432/dbname
   ```
+
   - Create a PostgreSQL database in Render or use external provider (AWS RDS, Supabase, etc.)
   - Ensure pgvector extension is installed: `CREATE EXTENSION IF NOT EXISTS vector;`
   - Ensure HNSW index extension: `CREATE EXTENSION IF NOT EXISTS hnsw;`
 
 ### API Keys (get from respective platforms)
+
 - **OPENAI_API_KEY** — OpenAI API key for embeddings and LLM calls
 - **RESEND_API_KEY** — Resend API key for email sending
 - **EMAIL_FROM** — Sender email address (e.g., `noreply@yourapp.com`)
 
 ### Relay
+
 - **RELAY_SECRET** — Shared secret for relay operations (generate a strong random string)
 
 ## Optional Environment Variables
@@ -61,12 +66,14 @@ Set these in Render's **Environment** tab (mark sensitive ones as **secrets**):
    - Render managed: Create a PostgreSQL database instance
 
 2. **Install required extensions**:
+
    ```sql
    CREATE EXTENSION IF NOT EXISTS vector;
    CREATE EXTENSION IF NOT EXISTS hnsw;
    ```
 
 3. **Run migrations** (post-deployment):
+
    ```bash
    # SSH into Render instance or run migration tool
    psql $DATABASE_URL < aletheia-mneme/migrations/001_init.sql
@@ -77,6 +84,7 @@ Set these in Render's **Environment** tab (mark sensitive ones as **secrets**):
 ## Post-Deployment
 
 ### Test the deployment
+
 ```bash
 # Health check
 curl https://your-render-url.onrender.com/health
@@ -90,12 +98,14 @@ curl https://your-render-url.onrender.com/health
 The MCP endpoint is at `/mcp` and supports two authentication methods:
 
 #### Option 1: Bearer Token Header
+
 ```bash
 curl -H "Authorization: Bearer YOUR_API_KEY" https://your-render-url.onrender.com/mcp
 ```
 
 #### Option 2: Query Parameter (for tools that only accept URLs)
-```
+
+```text
 https://your-render-url.onrender.com/mcp?api_key=YOUR_API_KEY
 ```
 
@@ -157,21 +167,25 @@ This ensures all dependencies are correctly resolved during CI/deployment.
 ## Troubleshooting
 
 ### Build Fails: "ModuleNotFoundError"
+
 - Check `requirements.txt` is in `aletheia-mneme/`
 - Verify Python version (3.11+ required)
 - Run locally: `pip install -r aletheia-mneme/requirements.txt`
 
 ### Database Connection Error
+
 - Verify **DATABASE_URL** format: `postgres://user:pass@host:port/db`
 - Ensure Postgres is accessible from Render (firewall rules)
 - Test connection: `psql $DATABASE_URL -c "SELECT 1;"`
 
 ### Authentication Fails (401)
+
 - Verify API key is valid in the database (`namespaces` table)
 - Try Bearer header first: `Authorization: Bearer KEY`
 - If using query param: encode special chars (e.g., `%` → `%25`)
 
 ### Health Check Fails
+
 - Check database connection: `GET /health`
 - Verify **DATABASE_URL** env var is set
 - View logs in Render dashboard → "Logs" tab
