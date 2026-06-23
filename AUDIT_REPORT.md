@@ -2,7 +2,7 @@
 
 **Audit Date:** 2026-03-24
 **Scope:** `aletheia-mneme/` application code, database schema, dependency injection,
-billing integration, security model, and Stateless Supply Chain posture.
+security model, and Stateless Supply Chain posture.
 **Auditor:** TMRP Architecture Review
 
 ---
@@ -28,11 +28,11 @@ AI infrastructure.
 | `main.py` | Entrypoint | App factory, middleware, startup/shutdown, router mounts | High (expected) |
 | `auth.py` | Security | API key generation, Argon2id hashing, MCPAuthMiddleware | Low |
 | `storage.py` | Core | All 14 memory CRUD/search/graph operations | Low |
-| `tools.py` | Interface | 16 MCP tool definitions, tier gating, ContextVar access | Medium |
+| `tools.py` | Interface | 16 MCP tool definitions, ContextVar access | Medium |
 | `db.py` | Infrastructure | asyncpg pool lifecycle, pgvector codec registration | Low |
 | `embeddings.py` | Infrastructure | OpenAI + local embedding with graceful fallback | Low |
-| `billing.py` | Feature | Stripe checkout, webhook, tier management | **Fully decoupled** |
-| `relay.py` | Feature | AppNest ephemeral multi-agent sandbox | Low |
+| `signup.py` | Feature | Free namespace + full-access API key issuance | Low |
+| `relay.py` | Feature | Ephemeral multi-agent relay sandbox | Low |
 | `sync.py` | Feature | Cloud push/pull with SSRF protection | Low |
 | `env.py` | Config | Lazy-loaded environment with validation | Low |
 | `mailer.py` | Infrastructure | Resend transactional email (fire-and-forget) | Low |
@@ -125,53 +125,26 @@ The use of `contextvars.ContextVar` for `current_namespace` and `current_db` is 
 
 ---
 
-## 3. Stripe Billing Decoupling Assessment
+## 3. Access Model — Completely Free
 
-### 3.1 Architecture
+Mneme has **no billing, paywall, or tiers**. There is no Stripe dependency and no
+`billing.py`. Every API key has full access to all 16 tools.
 
-```
-billing.py (Stripe routes)          storage.py (core memory engine)
-┌─────────────────────────┐         ┌─────────────────────────────┐
-│ POST /billing/checkout  │         │ store_memory()              │
-│ POST /billing/webhook   │         │ get_memory()                │
-│ GET  /billing/success   │         │ semantic_search()           │
-│                         │         │ ... (14 operations)         │
-│ Depends on:             │         │                             │
-│  - stripe               │────X────│ Depends on:                 │
-│  - resend               │         │  - asyncpg                  │
-│  - db (pool)            │         │  - embeddings               │
-│                         │         │  - helios                   │
-└─────────────────────────┘         └─────────────────────────────┘
-         │                                       │
-    Writes to:                              Reads from:
-    namespaces.tier                         namespaces.tier
-    api_keys                                api_keys (via auth)
-```
+### 3.1 Key Issuance
 
-### 3.2 Decoupling Evidence
+- **`POST /signup`** — public, free endpoint that creates a namespace and mints a
+  full-access API key (`mneme_p_…`), returning it and emailing it via Resend.
+- **`PERSONAL_MODE`** — single-operator deployments use one hardcoded
+  `PERSONAL_API_KEY` verified with `secrets.compare_digest`, requiring no signup.
+
+### 3.2 Notes
 
 | Criterion | Status | Detail |
 |-----------|--------|--------|
-| `storage.py` imports `stripe`? | **No** | Zero Stripe imports in core memory module |
-| `storage.py` imports `billing`? | **No** | No cross-import |
-| `tools.py` imports `billing`? | **No** | Tier gating reads `_ns()["tier"]` — a string, not a Stripe object |
-| Billing failure blocks memory ops? | **No** | Webhook errors are logged, not raised; tool calls continue |
-| `PERSONAL_MODE` bypasses billing? | **Yes** | Hardcoded key → fixed "premium" namespace, no Stripe calls |
-| Billing router is optional? | **Yes** | Remove the router mount in `main.py` and core engine still runs |
-| Database coupling? | **Minimal** | Billing writes `tier` column; tools read it. No shared transactions |
-
-### 3.3 Sovereign Local-First Viability
-
-To run Mneme without **any** billing dependency:
-
-1. Set `PERSONAL_MODE=true` and `PERSONAL_API_KEY=<your-key>`.
-2. Remove or stub the `STRIPE_*` env vars.
-3. The `billing.py` router never activates for `/mcp/*` tool calls.
-4. All 16 tools are available at premium tier.
-
-**Verdict: PASS** — Billing is cleanly decoupled. The `tier` column is the only
-shared surface, and it is a plain string (`"free"` | `"premium"`) with no Stripe-specific
-semantics leaking into the memory engine.
+| Any payment dependency? | **No** | `stripe` removed from `requirements.txt` and code |
+| Any feature gating? | **No** | `_require_premium()` removed; all 16 tools open to every key |
+| `tier` column retained? | **Yes** | Defaults to `premium`; kept for forward compatibility, no longer gates anything |
+| List page size capped? | **No** | The requested `limit` is passed straight through |
 
 ---
 
@@ -186,7 +159,7 @@ semantics leaking into the memory engine.
 | Key storage | Hash only; raw key returned once, emailed, never persisted | Strong |
 | Prefix pre-filter | First 9 chars indexed for DB lookup before hash verify | Efficient + safe |
 | Personal mode | `secrets.compare_digest` (constant-time) | Correct |
-| Relay auth | Separate `APPNEST_RELAY_SECRET` bearer token | Correct isolation |
+| Relay auth | Separate `RELAY_SECRET` bearer token | Correct isolation |
 
 ### 4.2 Input Validation
 
@@ -197,7 +170,7 @@ semantics leaking into the memory engine.
 | Category | 1–128 chars | Validated before DB write |
 | Embedding text | Truncated to 8,000 chars | Before OpenAI API call |
 | Relay session | 300 memories max | HTTP 429 on overflow |
-| List page size | 50 (free), uncapped (premium) | Tier-gated |
+| List page size | Caller-supplied `limit` | Uncapped (no tiers) |
 
 ### 4.3 SSRF Protection (Cloud Sync)
 
@@ -220,12 +193,11 @@ The `/sync/push` endpoint validates target URLs:
 
 **Verdict: PASS** — No cross-tenant query path identified.
 
-### 4.5 Webhook Security
+### 4.5 Relay Authentication
 
-Stripe webhooks are verified via `stripe.Webhook.construct_event()` with the
-`STRIPE_WEBHOOK_SECRET`. Duplicate events are rejected via the `processed_events` table
-(idempotency). Processing errors are caught and logged without re-raising, allowing
-Stripe to retry.
+The `/relay` endpoint is gated by a dedicated `RELAY_SECRET` bearer token, compared in
+constant time via `secrets.compare_digest`. It is independent of user API keys, so relay
+access cannot be obtained with a tenant key (and vice versa).
 
 **Verdict: PASS**
 
@@ -304,13 +276,12 @@ adding a `tsvector` generated column + GIN index would improve performance.
 | Test Module | Coverage Area | Key Scenarios |
 |-------------|--------------|---------------|
 | `test_auth.py` | API key lifecycle | Generation, hashing, prefix lookup, Argon2 verify |
-| `test_billing.py` | Stripe integration | Checkout flow, webhook events, tier transitions, idempotency |
-| `test_endpoints.py` | HTTP surface | Health, billing, relay, sync, MCP auth, tier gating |
+| `test_endpoints.py` | HTTP surface | Health, signup, relay, sync, MCP auth |
 | `test_concurrency.py` | Race conditions | Concurrent memory updates, version conflicts |
 | `test_isolation.py` | Multi-tenancy | Cross-namespace query prevention |
 | `test_relay.py` | Relay sandbox | Session isolation, TTL, capacity limits |
 | `test_storage.py` | Core engine | CRUD, search, embeddings, soft deletes, history |
-| `test_tools.py` | MCP interface | Tool availability, tier gating, error handling |
+| `test_tools.py` | MCP interface | Tool availability, error handling |
 | `test_helios.py` | Integrity | Canonical form, SHA-256, test vector validation |
 
 **Verdict:** Comprehensive coverage across all critical paths. Concurrency and isolation
@@ -335,8 +306,9 @@ tests are particularly noteworthy — these are often omitted in early-stage pro
 
 Aletheia Mneme is a well-architected, security-conscious AI memory server that achieves
 its stated goal of providing a **sovereign, local-first alternative** to centralized AI
-middleware. The Stripe billing integration is **cleanly decoupled** from the core memory
-engine — `PERSONAL_MODE` operates with zero billing dependencies. The dependency injection
+middleware. It is **completely free** — no billing, paywall, or tiers — with every API key
+granted full access to all 16 tools, and `PERSONAL_MODE` operating with zero external
+dependencies beyond the database. The dependency injection
 pattern (ContextVars set by middleware, consumed by tools) is idiomatic and correct. The
 `DATABASE_URL` is the sole infrastructure credential, injected via environment variable
 and consumed once at pool creation.

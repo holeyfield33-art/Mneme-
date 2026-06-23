@@ -17,17 +17,11 @@ def _db():
     return current_db.get()
 
 
-def _require_premium():
-    ns = _ns()
-    if ns["tier"] != "premium":
-        raise ValueError("Premium subscription required for this tool")
-
-
-# ── FREE TOOLS (8) ──────────────────────────────────────────
+# ── MEMORY TOOLS ────────────────────────────────────────────
 
 @mcp.tool()
 async def store_memory(key: str, value: str, category: str = "general") -> dict:
-    """Store a memory. Available on free and premium tiers."""
+    """Store a memory."""
     ns = _ns()
     return await storage.store_memory(ns["id"], key, value, category, "user", _db())
 
@@ -42,15 +36,14 @@ async def get_memory(key: str) -> dict:
 
 @mcp.tool()
 async def list_memories(category: str = None, limit: int = 50) -> list:
-    """List memories. Free tier limited to 50."""
+    """List memories."""
     ns = _ns()
-    max_limit = 50 if ns["tier"] == "free" else limit
-    return await storage.list_memories(ns["id"], category, max_limit, 0, _db())
+    return await storage.list_memories(ns["id"], category, limit, 0, _db())
 
 
 @mcp.tool()
 async def search_memory(query: str, limit: int = 10) -> list:
-    """Keyword search. Free tier only."""
+    """Keyword search."""
     ns = _ns()
     return await storage.keyword_search(ns["id"], query, limit, _db())
 
@@ -98,60 +91,53 @@ async def get_stats() -> dict:
     }
 
 
-# ── PREMIUM TOOLS (8) ────────────────────────────────────────
+# ── ADVANCED TOOLS ───────────────────────────────────────────
 
 @mcp.tool()
 async def semantic_search(query: str, limit: int = 10) -> list:
-    """Vector cosine similarity search. Premium only."""
-    _require_premium()
+    """Vector cosine similarity search."""
     ns = _ns()
     return await storage.semantic_search(ns["id"], query, limit, _db())
 
 
 @mcp.tool()
 async def relate_memories(from_key: str, to_key: str, rel_type: str) -> dict:
-    """Create a relationship between two memories. Premium only."""
-    _require_premium()
+    """Create a relationship between two memories."""
     ns = _ns()
     return await storage.relate_memories(ns["id"], from_key, to_key, rel_type, _db())
 
 
 @mcp.tool()
 async def get_related(key: str) -> list:
-    """Get memories related to a key. Premium only."""
-    _require_premium()
+    """Get memories related to a key."""
     ns = _ns()
     return await storage.get_related_memories(ns["id"], key, _db())
 
 
 @mcp.tool()
 async def memory_history(key: str) -> list:
-    """Get full edit history for a memory. Premium only."""
-    _require_premium()
+    """Get full edit history for a memory."""
     ns = _ns()
     return await storage.get_memory_history(ns["id"], key, _db())
 
 
 @mcp.tool()
 async def rollback_memory(key: str, version: int) -> dict:
-    """Restore a previous version. Premium only."""
-    _require_premium()
+    """Restore a previous version."""
     ns = _ns()
     return await storage.rollback_memory(ns["id"], key, version, _db())
 
 
 @mcp.tool()
 async def export_memories() -> list:
-    """Export all memories as JSON. Premium only."""
-    _require_premium()
+    """Export all memories as JSON."""
     ns = _ns()
     return await storage.export_memories(ns["id"], _db())
 
 
 @mcp.tool()
 async def verify_memory(key: str) -> dict:
-    """Verify Helios cryptographic integrity. Premium only."""
-    _require_premium()
+    """Verify Helios cryptographic integrity."""
     ns = _ns()
     return await storage.verify_memory_helios(ns["id"], key, _db())
 
@@ -159,8 +145,7 @@ async def verify_memory(key: str) -> dict:
 @mcp.tool()
 async def cloud_sync(target_url: str, direction: str = "push",
                      conflict_strategy: str = "highest_version_wins") -> dict:
-    """Push or pull memories to another Mneme instance. Premium only."""
-    _require_premium()
+    """Push or pull memories to another Mneme instance."""
     from sync import _validate_sync_url, VALID_CONFLICT_STRATEGIES
     _validate_sync_url(target_url)
     if conflict_strategy not in VALID_CONFLICT_STRATEGIES:

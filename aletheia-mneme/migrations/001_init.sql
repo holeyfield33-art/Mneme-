@@ -3,9 +3,7 @@ CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 CREATE TABLE namespaces (
   id                          TEXT PRIMARY KEY DEFAULT gen_random_uuid()::TEXT,
   email                       TEXT,
-  tier                        TEXT NOT NULL DEFAULT 'free',
-  stripe_customer_id          TEXT,
-  stripe_subscription_id      TEXT,
+  tier                        TEXT NOT NULL DEFAULT 'premium',
   request_count_current_month INTEGER DEFAULT 0,
   created_at                  TIMESTAMP DEFAULT NOW(),
   is_active                   BOOLEAN DEFAULT TRUE
@@ -68,9 +66,4 @@ CREATE TABLE sync_log (
   status         TEXT,
   helios_receipt TEXT,
   created_at     TIMESTAMP DEFAULT NOW()
-);
-
-CREATE TABLE processed_events (
-  id TEXT PRIMARY KEY,
-  created_at TIMESTAMP DEFAULT NOW()
 );

@@ -5,7 +5,6 @@ pgvector
 argon2-cffi
 openai
 sentence-transformers
-stripe
 resend
 python-dotenv
 structlog

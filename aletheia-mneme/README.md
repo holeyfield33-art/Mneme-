@@ -3,7 +3,7 @@
 **True memory for AI agents.**
 
 Persistent AI memory server with semantic search, cryptographic integrity (Helios Core),
-Stripe billing, and AppNest relay sandbox.
+and a multi-agent relay sandbox. Free and open to use — all 16 tools available to every key.
 
 Part of the **Aletheia Sovereign Systems** product family — the memory layer of the
 **TMRP (Trusted Machine-Readable Provenance)** stack.
@@ -21,7 +21,6 @@ Part of the **Aletheia Sovereign Systems** product family — the memory layer o
 - **FastMCP** — Model Context Protocol server
 - **Helios Core** — SHA-256 content hashing with canonical serialization
 - **OpenAI** text-embedding-3-small (1536-dim vectors)
-- **Stripe** subscription billing
 - **Resend** transactional email
 - **Render** deployment
 
@@ -33,29 +32,29 @@ Part of the **Aletheia Sovereign Systems** product family — the memory layer o
 │  (AI Agent)  │   │  FastMCP     │   │  + pgvector   │
 └──────────────┘   └──────┬───────┘   └───────────────┘
                           │
-              ┌───────────┼───────────┐
-              ▼           ▼           ▼
-        ┌──────────┐ ┌────────┐ ┌─────────┐
-        │  Stripe  │ │ Resend │ │ OpenAI  │
-        │ Billing  │ │ Email  │ │Embedding│
-        └──────────┘ └────────┘ └─────────┘
+                   ┌──────┴──────┐
+                   ▼             ▼
+              ┌────────┐   ┌─────────┐
+              │ Resend │   │ OpenAI  │
+              │ Email  │   │Embedding│
+              └────────┘   └─────────┘
 ```
 
-## Tools (16 total)
+## Tools (16 total — all free)
 
-### Free Tier (8 tools)
+### Core (8 tools)
 | Tool | Description |
 |------|-------------|
 | `store_memory` | Store a memory with key, value, category |
 | `get_memory` | Retrieve a memory by key |
-| `list_memories` | List memories (limit 50 on free) |
+| `list_memories` | List memories |
 | `search_memory` | Keyword full-text search |
 | `forget_memory` | Soft-delete a memory |
 | `update_memory` | Update a memory's value |
 | `reinforce` | Increase confidence score |
-| `get_stats` | Usage stats and tier info |
+| `get_stats` | Usage stats |
 
-### Premium Tier (8 additional tools)
+### Advanced (8 tools)
 | Tool | Description |
 |------|-------------|
 | `semantic_search` | Vector cosine similarity search |
@@ -69,20 +68,19 @@ Part of the **Aletheia Sovereign Systems** product family — the memory layer o
 
 ## API Keys
 
-- **Free tier:** `mneme_f_...` — 8 tools, keyword search, 50-memory list cap
-- **Premium tier:** `mneme_p_...` — All 16 tools, semantic search, cloud sync, relay
+- `mneme_p_...` — full access to all 16 tools (semantic search, cloud sync, relay).
 
-Keys are hashed with Argon2id. The raw key is returned once at creation and never stored.
+Get one for free via `POST /signup`, or run in `PERSONAL_MODE` with a single
+hardcoded key. Keys are hashed with Argon2id. The raw key is returned once at
+creation and never stored.
 
 ## Endpoints
 
 | Method | Path | Description |
 |--------|------|-------------|
 | GET | `/health` | Health check |
-| POST | `/billing/checkout` | Create namespace + Stripe checkout |
-| POST | `/billing/webhook` | Stripe webhook receiver |
-| GET | `/billing/success` | Post-payment landing |
-| POST | `/relay` | AppNest relay sandbox |
+| POST | `/signup` | Create a namespace + free full-access API key |
+| POST | `/relay` | Multi-agent relay sandbox |
 | POST | `/sync/push` | Push memories to remote |
 | POST | `/sync/receive` | Receive memories from remote |
 | * | `/mcp/*` | MCP protocol (tools) |
@@ -104,12 +102,9 @@ Test vectors included in `test_vectors/vectors.json`.
 |----------|----------|-------------|
 | `DATABASE_URL` | Yes | Neon PostgreSQL connection string |
 | `OPENAI_API_KEY` | Yes | OpenAI API key for embeddings |
-| `STRIPE_SECRET_KEY` | Yes | Stripe secret key |
-| `STRIPE_WEBHOOK_SECRET` | Yes | Stripe webhook signing secret |
-| `STRIPE_PRICE_ID` | Yes | Stripe price ID for premium |
 | `RESEND_API_KEY` | Yes | Resend email API key |
 | `EMAIL_FROM` | Yes | Sender email address |
-| `APPNEST_RELAY_SECRET` | Yes | Bearer token for relay endpoint |
+| `RELAY_SECRET` | Yes | Bearer token for relay endpoint |
 | `PERSONAL_MODE` | No | Enable single-user mode (default: false) |
 | `PERSONAL_API_KEY` | No | API key for personal mode |
 | `HELIOS_ENABLED` | No | Enable Helios hashing (default: true) |

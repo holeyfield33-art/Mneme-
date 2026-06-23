@@ -1,19 +1,16 @@
-"""Endpoint E2E tests — billing, relay, sync, health, and tool tier gating.
+"""Endpoint E2E tests — signup, relay, sync, and health.
 
 Tests:
   - GET /health
-  - POST /billing/checkout (valid + invalid email)
-  - POST /billing/webhook (checkout.session.completed, subscription.deleted, idempotency)
+  - POST /signup (valid + invalid email)
   - POST /relay (store, fetch, search, capacity limit, auth rejection)
   - POST /sync/push (SSRF validation, missing fields)
   - POST /sync/receive (conflict strategies)
   - MCP auth middleware (401 for unauthenticated)
-  - Tool tier gating (free vs premium)
 """
 import pytest
 import json
 import time
-import stripe
 from unittest.mock import AsyncMock, patch, MagicMock, PropertyMock
 from datetime import datetime, timezone
 from tests import MockDB, MockRecord
@@ -66,107 +63,29 @@ class TestHealthEndpoint:
         assert data["database"] == "disconnected"
 
 
-# ── Billing Checkout ─────────────────────────────────────────
+# ── Signup ───────────────────────────────────────────────────
 
-class TestBillingCheckout:
-    @patch("billing.stripe.checkout.Session.create")
-    @patch("billing.em.send_free_key")
-    def test_checkout_valid_email(self, mock_email, mock_stripe, app_client):
+class TestSignup:
+    @patch("signup.em.send_api_key")
+    def test_signup_valid_email(self, mock_email, app_client):
         client, mock_db = app_client
-        mock_stripe.return_value = MagicMock(url="https://stripe.com/checkout/test")
 
-        resp = client.post("/billing/checkout", json={"email": "user@example.com"})
+        resp = client.post("/signup", json={"email": "user@example.com"})
         assert resp.status_code == 200
         data = resp.json()
-        assert "checkout_url" in data
         assert "api_key" in data
-        assert data["api_key"].startswith("mneme_f_")
+        assert "namespace_id" in data
+        assert data["api_key"].startswith("mneme_p_")
         mock_email.assert_called_once()
 
-    def test_checkout_invalid_email(self, app_client):
+    def test_signup_invalid_email(self, app_client):
         client, _ = app_client
-        resp = client.post("/billing/checkout", json={"email": "not-an-email"})
+        resp = client.post("/signup", json={"email": "not-an-email"})
         assert resp.status_code == 400
 
-    def test_checkout_missing_email(self, app_client):
+    def test_signup_missing_email(self, app_client):
         client, _ = app_client
-        resp = client.post("/billing/checkout", json={})
-        assert resp.status_code == 400
-
-
-# ── Billing Webhook ──────────────────────────────────────────
-
-class TestBillingWebhook:
-    @patch("billing.stripe.Webhook.construct_event")
-    @patch("billing.em.send_premium_upgrade")
-    def test_webhook_checkout_completed(self, mock_email, mock_construct, app_client):
-        client, mock_db = app_client
-        mock_construct.return_value = {
-            "id": "evt_test_001",
-            "type": "checkout.session.completed",
-            "data": {
-                "object": {
-                    "metadata": {"namespace_id": "ns_test"},
-                    "customer_email": "user@example.com",
-                }
-            },
-        }
-
-        resp = client.post(
-            "/billing/webhook",
-            content=b"raw_payload",
-            headers={"stripe-signature": "test_sig"},
-        )
-        assert resp.status_code == 200
-        data = resp.json()
-        assert data["status"] == "success"
-
-    @patch("billing.stripe.Webhook.construct_event")
-    def test_webhook_idempotency(self, mock_construct, app_client):
-        client, mock_db = app_client
-        mock_construct.return_value = {
-            "id": "evt_duplicate",
-            "type": "checkout.session.completed",
-            "data": {"object": {"metadata": {"namespace_id": "ns_test"}, "customer_email": ""}},
-        }
-        # First event is already processed
-        mock_db.set_fetchrow("processed_events", MockRecord({"id": "evt_duplicate"}))
-
-        resp = client.post(
-            "/billing/webhook",
-            content=b"raw_payload",
-            headers={"stripe-signature": "test_sig"},
-        )
-        assert resp.status_code == 200
-        assert resp.json()["status"] == "already_handled"
-
-    @patch("billing.stripe.Webhook.construct_event")
-    @patch("billing.em.send_downgrade")
-    def test_webhook_subscription_deleted(self, mock_email, mock_construct, app_client):
-        client, mock_db = app_client
-        mock_db.set_fetchrow("SELECT email FROM namespaces",
-                             MockRecord({"email": "user@test.com"}))
-        mock_construct.return_value = {
-            "id": "evt_test_002",
-            "type": "customer.subscription.deleted",
-            "data": {"object": {"metadata": {"namespace_id": "ns_test"}}},
-        }
-
-        resp = client.post(
-            "/billing/webhook",
-            content=b"raw_payload",
-            headers={"stripe-signature": "test_sig"},
-        )
-        assert resp.status_code == 200
-
-    def test_webhook_invalid_signature(self, app_client):
-        client, _ = app_client
-        # No mock → stripe.Webhook.construct_event will fail
-        resp = client.post(
-            "/billing/webhook",
-            content=b"raw_payload",
-            headers={"stripe-signature": "bad_sig"},
-        )
+        resp = client.post("/signup", json={})
         assert resp.status_code == 400
 
 
@@ -472,13 +391,3 @@ class TestSyncReceive:
             "conflict_strategy": "highest_version_wins",
         }, headers={"Authorization": "Bearer valid_key"})
         assert resp.status_code == 403
-
-
-# ── Billing Success Page ─────────────────────────────────────
-
-class TestBillingSuccess:
-    def test_billing_success_page(self, app_client):
-        client, _ = app_client
-        resp = client.get("/billing/success")
-        assert resp.status_code == 200
-        assert "Payment received" in resp.json()["message"]

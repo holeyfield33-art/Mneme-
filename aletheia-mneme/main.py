@@ -10,7 +10,7 @@ from slowapi.errors import RateLimitExceeded
 
 import env
 import db as database
-from billing import router as billing_router
+from signup import router as signup_router
 from relay import router as relay_router
 from sync import router as sync_router
 from auth import get_namespace_from_key
@@ -72,7 +72,7 @@ async def global_exception_handler(request: Request, exc: Exception):
     return JSONResponse(status_code=500, content={"error": "Internal server error"})
 
 
-app.include_router(billing_router)
+app.include_router(signup_router)
 app.include_router(relay_router)
 app.include_router(sync_router)
 
@@ -154,8 +154,3 @@ async def health():
         "version": "1.0.0",
         "database": "connected" if db_ok else "disconnected",
     }
-
-
-@app.get("/billing/success")
-async def billing_success():
-    return {"message": "Payment received. Check your email for your premium API key."}

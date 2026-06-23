@@ -37,9 +37,10 @@ infrastructure you control.
 ### Sovereign-First Design
 
 Mneme is designed so every deployment can run in **PERSONAL_MODE** — a single operator,
-a single API key, zero external billing dependencies. The Stripe integration exists for
-managed multi-tenant hosting but is **fully decoupled**: disable it, and the core memory
-engine runs identically on a laptop, an air-gapped server, or a Kubernetes pod.
+a single API key, zero external dependencies beyond your own database. Mneme is
+**completely free**: every key has full access to all 16 tools, with no billing, no
+paywall, and no tiers. The core memory engine runs identically on a laptop, an
+air-gapped server, or a Kubernetes pod.
 
 ---
 
@@ -72,7 +73,7 @@ to the access pattern it serves:
 │ • History    │  │ • Agent-       │  │   model fallback       │
 │ • Relations  │  │   isolated    │  │ • Graceful degradation  │
 │ • Sync log   │  │ • 300-memory  │  │   to keyword search    │
-│ • Billing    │  │   cap         │  │                        │
+│              │  │   cap         │  │                        │
 └──────────────┘  └───────────────┘  └────────────────────────┘
    State Store       Relay Store        Semantic Search Store
 ```
@@ -80,12 +81,12 @@ to the access pattern it serves:
 ### 1. State Store — PostgreSQL + Neon
 
 The authoritative persistence layer. Namespaces, API keys (Argon2id-hashed), memories,
-version history, relationship graphs, sync audit logs, and billing events all reside in
+version history, relationship graphs, and sync audit logs all reside in
 a single PostgreSQL database, benefiting from ACID transactions and row-level security.
 
 ### 2. Relay Store — Ephemeral Multi-Agent Sandbox
 
-The **AppNest Relay** provides short-lived, session-scoped memory partitions for
+The **Relay Store** provides short-lived, session-scoped memory partitions for
 multi-agent coordination. Each relay session is automatically namespace-isolated (derived
 from `session_id` + `agent_id`), capped at 300 memories, and **expires after 24 hours**.
 This is Mneme's secure alternative to piping agent state through unverified message
@@ -140,7 +141,7 @@ Redis Pub/Sub queues or third-party event buses.
 
 | Property | Detail |
 |----------|--------|
-| **Auth** | Dedicated `APPNEST_RELAY_SECRET` bearer token (separate from user keys) |
+| **Auth** | Dedicated `RELAY_SECRET` bearer token (separate from user keys) |
 | **Isolation** | Each `(session_id, agent_id)` pair gets its own namespace — agents cannot read each other's state |
 | **TTL** | All relay memories expire after 24 hours automatically |
 | **Capacity** | 300 memories per session (HTTP 429 on overflow) |
@@ -180,21 +181,23 @@ validation.
 
 ---
 
-## Tools (16 total)
+## Tools (16 total — all free)
 
-### Free Tier (8 tools)
+Every API key has full access to all 16 tools. There are no tiers or paywalls.
+
+### Core (8 tools)
 | Tool | Description |
 |------|-------------|
 | `store_memory` | Store a memory with key, value, category |
 | `get_memory` | Retrieve a memory by key |
-| `list_memories` | List memories (limit 50 on free) |
+| `list_memories` | List memories |
 | `search_memory` | Keyword full-text search |
 | `forget_memory` | Soft-delete a memory |
 | `update_memory` | Update a memory's value |
 | `reinforce` | Increase confidence score |
-| `get_stats` | Usage stats and tier info |
+| `get_stats` | Usage stats |
 
-### Premium Tier (8 additional tools)
+### Advanced (8 tools)
 | Tool | Description |
 |------|-------------|
 | `semantic_search` | Vector cosine similarity search |
@@ -213,10 +216,8 @@ validation.
 | Method | Path | Description |
 |--------|------|-------------|
 | GET | `/health` | Health check + version info |
-| POST | `/billing/checkout` | Create namespace + Stripe checkout session |
-| POST | `/billing/webhook` | Stripe webhook receiver |
-| GET | `/billing/success` | Post-payment landing page |
-| POST | `/relay` | AppNest multi-agent relay sandbox |
+| POST | `/signup` | Create a namespace + free full-access API key |
+| POST | `/relay` | Multi-agent relay sandbox |
 | POST | `/sync/push` | Push memories to remote Mneme instance (HTTPS, SSRF-protected) |
 | POST | `/sync/receive` | Receive memories with conflict resolution |
 | * | `/mcp/*` | MCP protocol mount (16 tools) |
@@ -229,12 +230,9 @@ validation.
 |----------|----------|-------------|
 | `DATABASE_URL` | Yes | PostgreSQL / Neon connection string |
 | `OPENAI_API_KEY` | Yes | OpenAI API key for embeddings |
-| `STRIPE_SECRET_KEY` | Yes | Stripe secret key |
-| `STRIPE_WEBHOOK_SECRET` | Yes | Stripe webhook signing secret |
-| `STRIPE_PRICE_ID` | Yes | Stripe price ID for premium tier |
 | `RESEND_API_KEY` | Yes | Resend email API key |
 | `EMAIL_FROM` | Yes | Sender email address |
-| `APPNEST_RELAY_SECRET` | Yes | Bearer token for relay endpoint |
+| `RELAY_SECRET` | Yes | Bearer token for relay endpoint |
 | `PERSONAL_MODE` | No | Enable single-user mode (default: `false`) |
 | `PERSONAL_API_KEY` | No | API key for personal mode |
 | `HELIOS_ENABLED` | No | Enable Helios hashing (default: `true`) |

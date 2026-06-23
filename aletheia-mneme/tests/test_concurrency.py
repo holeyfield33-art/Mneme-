@@ -208,17 +208,18 @@ class TestStorageValidationUnderLoad:
         assert len(successes) == 5
 
     @pytest.mark.asyncio
-    async def test_premium_gate_errors_dont_crash_batch(self):
-        """Free tier calling premium tools in a batch - all should raise."""
-        ns = {"id": "ns_free", "tier": "free"}
+    async def test_advanced_tools_open_to_all_in_batch(self):
+        """No tier gating — advanced tools run for any namespace in a batch."""
+        ns = {"id": "ns_user", "tier": "premium"}
         _setup_context(ns, MockDB())
 
-        tasks = [tools.semantic_search(f"q_{i}") for i in range(10)]
-        results = await asyncio.gather(*tasks, return_exceptions=True)
+        with patch("tools.storage.semantic_search", new_callable=AsyncMock,
+                   return_value=[{"key": "k", "similarity": 0.9}]):
+            tasks = [tools.semantic_search(f"q_{i}") for i in range(10)]
+            results = await asyncio.gather(*tasks, return_exceptions=True)
 
-        errors = [r for r in results if isinstance(r, ValueError)]
-        assert len(errors) == 10
-        assert all("Premium" in str(e) for e in errors)
+        assert all(not isinstance(r, Exception) for r in results)
+        assert len(results) == 10
 
 
 class TestInputValidationConcurrent:
