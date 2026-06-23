@@ -1,0 +1,17 @@
+fastapi
+uvicorn[standard]
+asyncpg
+pgvector
+argon2-cffi
+openai
+sentence-transformers
+resend
+python-dotenv
+structlog
+slowapi
+httpx
+mcp
+pytest
+pytest-asyncio
+pytest-cov
+anyio
