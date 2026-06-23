@@ -72,7 +72,8 @@ async def global_exception_handler(request: Request, exc: Exception):
     return JSONResponse(status_code=500, content={"error": "Internal server error"})
 
 
-app.include_router(signup_router)
+if not env.PERSONAL_MODE:
+    app.include_router(signup_router)
 app.include_router(relay_router)
 app.include_router(sync_router)
 
