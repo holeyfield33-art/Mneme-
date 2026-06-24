@@ -37,7 +37,7 @@ your local shell / `.env` file.
 | `RESEND_API_KEY` | Yes | `re_...` | Resend API key |
 | `EMAIL_FROM` | Yes | `noreply@yourapp.com` | Sender email address |
 | `RELAY_SECRET` | Yes | strong random string | Relay bearer secret |
-| `PERSONAL_MODE` | Optional | `false` (recommended) | If `true`, set `PERSONAL_API_KEY` |
+| `PERSONAL_MODE` | Optional | `false` (recommended) | If `true`, `PERSONAL_API_KEY` is required |
 | `PERSONAL_API_KEY` | Optional | `mneme_p_...` or custom | Required only when `PERSONAL_MODE=true` |
 | `HELIOS_ENABLED` | Optional | `true` | Helios integrity verification |
 | `LOCAL_EMBEDDINGS_FALLBACK` | Optional | `false` | Local embeddings fallback |
@@ -55,7 +55,7 @@ your local shell / `.env` file.
 | `PERSONAL_MODE` | Optional | `false` | Enable single-user mode |
 | `PERSONAL_API_KEY` | Optional | custom string | Required when `PERSONAL_MODE=true` |
 | `HELIOS_ENABLED` | Optional | `true` | Enable/disable Helios hashing |
-| `LOCAL_EMBEDDINGS_FALLBACK` | Optional | `false` | Set `true` to prefer local embeddings |
+| `LOCAL_EMBEDDINGS_FALLBACK` | Optional | `false` | Local embeddings fallback |
 
 ### Database
 
