@@ -25,8 +25,8 @@ The app is configured in [`render.yaml`](render.yaml). To deploy:
 
 ## Complete Environment Variable Matrix
 
-| Variable | Render | Local | Required | Notes |
-|----------|--------|-------|----------|-------|
+| Variable | Render | Local Setup | Required | Notes |
+|----------|--------|-------------|----------|-------|
 | **DATABASE_URL** | Render dashboard | Shell / `.env` export | Yes | PostgreSQL connection string used at startup |
 | **OPENAI_API_KEY** | Render dashboard | Shell / `.env` export | Yes | Required by `embeddings.py` on import |
 | **RESEND_API_KEY** | Render dashboard | Shell / `.env` export | Yes | Required for signup email sending |
