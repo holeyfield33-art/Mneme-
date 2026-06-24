@@ -38,7 +38,7 @@ your local shell / `.env` file.
 | `EMAIL_FROM` | Yes | `noreply@yourapp.com` | Sender email address |
 | `RELAY_SECRET` | Yes | strong random string | Relay bearer secret |
 | `PERSONAL_MODE` | Optional | `false` | Recommended default; if `true`, `PERSONAL_API_KEY` is required |
-| `PERSONAL_API_KEY` | Conditional | `mneme_p_...` or custom | Required only when `PERSONAL_MODE=true` |
+| `PERSONAL_API_KEY` | Conditional | `your_personal_api_key` | Required only when `PERSONAL_MODE=true` |
 | `HELIOS_ENABLED` | Optional | `true` | Helios integrity verification |
 | `LOCAL_EMBEDDINGS_FALLBACK` | Optional | `false` | Local embeddings fallback |
 | `PORT` | Render-managed | auto-set by Render | Used by start command (`--port $PORT`) |
@@ -89,7 +89,7 @@ RESEND_API_KEY=re_your_key
 EMAIL_FROM=dev@yourdomain.com
 RELAY_SECRET=replace_with_long_random_secret
 PERSONAL_MODE=false
-# PERSONAL_API_KEY=your_personal_key_if_personal_mode_true
+# PERSONAL_API_KEY=your_personal_key_if_PERSONAL_MODE_true
 HELIOS_ENABLED=true
 LOCAL_EMBEDDINGS_FALLBACK=false
 ```
