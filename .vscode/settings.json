@@ -1,0 +1,13 @@
+{
+  // Point Pylance at the environment where pytest and all project deps are installed.
+  // Fixes: Import "pytest" could not be resolved
+  "python.defaultInterpreterPath": "/home/codespace/.python/current/bin/python",
+
+  // The mssql extension treats every .sql file as T-SQL and flags PostgreSQL-specific
+  // syntax (e.g. ADD COLUMN IF NOT EXISTS) as invalid.  Map migration files to
+  // plaintext so the T-SQL validator is bypassed — the SQL is valid PostgreSQL and
+  // was already executed against the live Neon DB successfully.
+  "files.associations": {
+    "aletheia-mneme/migrations/**/*.sql": "plaintext"
+  }
+}
