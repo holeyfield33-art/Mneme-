@@ -2,7 +2,7 @@
 
 ## Quick Start via render.yaml
 
-The app is configured in [`aletheia-mneme/render.yaml`](aletheia-mneme/render.yaml). To deploy:
+The app is configured in [`render.yaml`](render.yaml). To deploy:
 
 1. Connect your GitHub repo to Render.com
 2. Click "New" → "Web Service" → "Build and deploy from a Git repository"
@@ -21,7 +21,22 @@ The app is configured in [`aletheia-mneme/render.yaml`](aletheia-mneme/render.ya
 | **Environment** | Python 3.11+ |
 | **Build Command** | `pip install -r aletheia-mneme/requirements.txt` |
 | **Start Command** | `cd aletheia-mneme && uvicorn main:app --host 0.0.0.0 --port $PORT` |
-| **Root Directory** | `aletheia-mneme` |
+| **Root Directory** | repo root (leave blank) |
+
+## Complete Environment Variable Matrix
+
+| Variable | Render | Local | Required | Notes |
+|----------|--------|-------|----------|-------|
+| **DATABASE_URL** | Set manually | Set manually | Yes | PostgreSQL connection string used at startup |
+| **OPENAI_API_KEY** | Set manually | Set manually | Yes | Required by `embeddings.py` on import |
+| **RESEND_API_KEY** | Set manually | Set manually | Yes | Required for signup email sending |
+| **EMAIL_FROM** | Set manually | Set manually | Yes | Sender email address for Resend |
+| **RELAY_SECRET** | Set manually | Set manually | Yes | Auth token for `/relay` |
+| **PERSONAL_MODE** | Optional | Optional | No | Defaults to `false` |
+| **PERSONAL_API_KEY** | Optional | Optional | Only if `PERSONAL_MODE=true` | Leave empty otherwise |
+| **HELIOS_ENABLED** | Optional | Optional | No | Defaults to `true` |
+| **LOCAL_EMBEDDINGS_FALLBACK** | Optional | Optional | No | Defaults to `false` |
+| **PORT** | Auto-provided by Render | Not needed | No | Render injects this automatically; local dev can keep `8000` in the uvicorn command |
 
 ## Required Environment Variables
 
@@ -58,6 +73,30 @@ Set these in Render's **Environment** tab (mark sensitive ones as **secrets**):
 | **PERSONAL_API_KEY** | empty | API key for personal mode |
 | **HELIOS_ENABLED** | `true` | Enable Helios verification system |
 | **LOCAL_EMBEDDINGS_FALLBACK** | `false` | Use local embeddings fallback (slower, no API cost) |
+
+## Local Setup
+
+The app reads OS environment variables directly from [`aletheia-mneme/env.py`](aletheia-mneme/env.py).
+It does **not** auto-load a `.env` file by itself, so export the variables in your shell before starting
+the server.
+
+1. Copy the template:
+
+   ```bash
+   cp aletheia-mneme/.env.example aletheia-mneme/.env
+   ```
+
+2. Replace the placeholder values in `aletheia-mneme/.env`.
+
+3. Export the file into your shell session and start Mneme:
+
+   ```bash
+   cd aletheia-mneme
+   set -a
+   . ./.env
+   set +a
+   uvicorn main:app --host 0.0.0.0 --port 8000
+   ```
 
 ## Database Setup Steps
 
@@ -127,15 +166,15 @@ deployments, set `PERSONAL_MODE=true` and a `PERSONAL_API_KEY` instead.
 
 ## Render.yaml File Format
 
-The deployment is defined in [`aletheia-mneme/render.yaml`](aletheia-mneme/render.yaml):
+The deployment is defined in [`render.yaml`](render.yaml):
 
 ```yaml
 services:
   - type: web
     name: aletheia-mneme
     env: python
-    buildCommand: pip install -r requirements.txt
-    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    buildCommand: pip install -r aletheia-mneme/requirements.txt
+    startCommand: cd aletheia-mneme && uvicorn main:app --host 0.0.0.0 --port $PORT
     envVars:
       - key: DATABASE_URL
         sync: false
@@ -150,6 +189,9 @@ services:
       - key: PERSONAL_MODE
         value: false
 ```
+
+If you also want `PERSONAL_API_KEY`, `HELIOS_ENABLED`, or `LOCAL_EMBEDDINGS_FALLBACK`
+on Render, add them manually in the Render dashboard's **Environment** tab.
 
 ## Horos Configuration
 

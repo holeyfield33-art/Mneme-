@@ -112,6 +112,10 @@ Test vectors included in `test_vectors/vectors.json`.
 | `HELIOS_ENABLED` | No | Enable Helios hashing (default: true) |
 | `LOCAL_EMBEDDINGS_FALLBACK` | No | Use local model instead of OpenAI |
 
+For the complete Render + local setup checklist, see
+[`../RENDER_SETUP.md`](../RENDER_SETUP.md) and copy
+[`./.env.example`](.env.example) for local development.
+
 ## Development
 
 ```bash
