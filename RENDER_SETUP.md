@@ -23,7 +23,7 @@ The app is configured in [`aletheia-mneme/render.yaml`](aletheia-mneme/render.ya
 | **Start Command** | `cd aletheia-mneme && uvicorn main:app --host 0.0.0.0 --port $PORT` |
 | **Root Directory** | `aletheia-mneme` |
 
-## Complete Environment Variable List (Render + Local)
+## Environment Variable Setup
 
 Set these in Render's **Environment** tab (mark sensitive ones as **secrets**), or in
 your local shell / `.env` file.
@@ -38,7 +38,7 @@ your local shell / `.env` file.
 | `EMAIL_FROM` | Yes | `noreply@yourapp.com` | Sender email address |
 | `RELAY_SECRET` | Yes | strong random string | Relay bearer secret |
 | `PERSONAL_MODE` | Optional | `false` | Recommended default; if `true`, `PERSONAL_API_KEY` is required |
-| `PERSONAL_API_KEY` | Optional | `mneme_p_...` or custom | Required only when `PERSONAL_MODE=true` |
+| `PERSONAL_API_KEY` | Conditional | `mneme_p_...` or custom | Required only when `PERSONAL_MODE=true` |
 | `HELIOS_ENABLED` | Optional | `true` | Helios integrity verification |
 | `LOCAL_EMBEDDINGS_FALLBACK` | Optional | `false` | Local embeddings fallback |
 | `PORT` | Render-managed | auto-set by Render | Used by start command (`--port $PORT`) |
@@ -53,7 +53,7 @@ your local shell / `.env` file.
 | `EMAIL_FROM` | Yes | `dev@yourdomain.com` | Sender email address |
 | `RELAY_SECRET` | Yes | strong random string | Relay endpoint auth |
 | `PERSONAL_MODE` | Optional | `false` | Enable single-user mode |
-| `PERSONAL_API_KEY` | Optional | custom string | Required when `PERSONAL_MODE=true` |
+| `PERSONAL_API_KEY` | Conditional | custom string | Required when `PERSONAL_MODE=true` |
 | `HELIOS_ENABLED` | Optional | `true` | Enable/disable Helios hashing |
 | `LOCAL_EMBEDDINGS_FALLBACK` | Optional | `false` | Local embeddings fallback |
 
