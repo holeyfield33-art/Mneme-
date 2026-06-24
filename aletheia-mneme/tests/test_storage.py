@@ -99,6 +99,7 @@ class TestStoreMemory:
             "confidence": 1.0, "last_updated": datetime.now(timezone.utc),
             "last_accessed": datetime.now(timezone.utc), "access_count": 0,
             "expires_at": None, "is_deleted": False,
+            "helios_created_at": "2025-01-15T10:30:00.000Z",
         })
         updated_record = MockRecord({**dict(existing_record), "value": "new value", "version": 2})
         db.set_fetchrow("SELECT * FROM memories", existing_record)
@@ -205,6 +206,7 @@ class TestUpdateMemory:
         existing = MockRecord({
             "id": "mem_001", "value": "old value", "version": 1,
             "category": "general", "source": "user", "key": "test/key",
+            "helios_created_at": "2025-01-15T10:30:00.000Z",
         })
         updated = MockRecord({**dict(existing), "value": "new value", "version": 2})
         db.set_fetchrow("SELECT * FROM memories WHERE", existing)
@@ -264,17 +266,25 @@ class TestSemanticSearch:
 class TestHeliosHash:
     @pytest.mark.asyncio
     async def test_compute_helios_hash_returns_hex(self):
-        h = await storage._compute_helios_hash("test/key", "test value", "general")
+        ts = "2025-01-15T10:30:00.000Z"
+        h = await storage._compute_helios_hash("test/key", "test value", "general", ts)
         assert h is not None
         assert len(h) == 64
 
     @pytest.mark.asyncio
     async def test_compute_helios_hash_deterministic(self):
-        h1 = await storage._compute_helios_hash("test/key", "test value", "general")
-        h2 = await storage._compute_helios_hash("test/key", "test value", "general")
-        # Note: created_at uses datetime.now() so hashes may differ
-        # This tests within the same test execution
+        ts = "2025-01-15T10:30:00.000Z"
+        h1 = await storage._compute_helios_hash("test/key", "test value", "general", ts)
+        h2 = await storage._compute_helios_hash("test/key", "test value", "general", ts)
+        # Same created_at → hashes must be identical
         assert h1 is not None and h2 is not None
+        assert h1 == h2
+
+    @pytest.mark.asyncio
+    async def test_compute_helios_hash_differs_for_different_timestamps(self):
+        h1 = await storage._compute_helios_hash("k", "v", "general", "2025-01-01T00:00:00.000Z")
+        h2 = await storage._compute_helios_hash("k", "v", "general", "2025-06-01T00:00:00.000Z")
+        assert h1 != h2
 
 
 # ── Memory Relationships ─────────────────────────────────────
@@ -352,3 +362,56 @@ class TestVerifyMemory:
         result = await storage.verify_memory_helios("ns_1", "missing", db)
         assert result["valid"] is False
         assert "not found" in result["error"].lower()
+
+    @pytest.mark.asyncio
+    async def test_verify_pre_migration_record_is_unverifiable(self):
+        """Rows stored before migration 005 have helios_created_at=None.
+        verify_memory_helios must report unverifiable rather than valid=False."""
+        db = MockDB()
+        record = MockRecord({
+            "id": "mem_pre", "namespace_id": "ns_1", "key": "old/key",
+            "value": "some value", "category": "general", "source": "user",
+            "content_hash": "deadbeef", "version": 1,
+            "helios_created_at": None,
+        })
+        db.set_fetchrow("SELECT * FROM memories", record)
+        result = await storage.verify_memory_helios("ns_1", "old/key", db)
+        assert result["valid"] is False
+        assert result.get("unverifiable") is True
+        assert "pre-migration" in result["reason"]
+
+    @pytest.mark.asyncio
+    async def test_verify_valid_memory_returns_true(self):
+        """A record stored with migration 005 should verify correctly."""
+        ts = "2025-01-15T10:30:00.000Z"
+        # Compute the expected hash the same way store_memory does.
+        expected_hash = await storage._compute_helios_hash("test/key", "test value", "general", ts)
+        db = MockDB()
+        record = MockRecord({
+            "id": "mem_001", "namespace_id": "ns_1", "key": "test/key",
+            "value": "test value", "category": "general", "source": "user",
+            "content_hash": expected_hash, "version": 1,
+            "helios_created_at": ts,
+        })
+        db.set_fetchrow("SELECT * FROM memories", record)
+        result = await storage.verify_memory_helios("ns_1", "test/key", db)
+        assert result["valid"] is True
+        assert result["computed_hash"] == result["stored_hash"]
+
+    @pytest.mark.asyncio
+    async def test_verify_tampered_value_returns_false(self):
+        """A record whose value was altered out-of-band must fail verification."""
+        ts = "2025-01-15T10:30:00.000Z"
+        original_hash = await storage._compute_helios_hash("test/key", "original", "general", ts)
+        db = MockDB()
+        record = MockRecord({
+            "id": "mem_001", "namespace_id": "ns_1", "key": "test/key",
+            "value": "tampered",          # value changed but hash not updated
+            "category": "general", "source": "user",
+            "content_hash": original_hash, "version": 1,
+            "helios_created_at": ts,
+        })
+        db.set_fetchrow("SELECT * FROM memories", record)
+        result = await storage.verify_memory_helios("ns_1", "test/key", db)
+        assert result["valid"] is False
+        assert result["computed_hash"] != result["stored_hash"]

@@ -21,11 +21,13 @@ def _validate_input(key: str, value: str, category: str = "general"):
     if category and len(category) > MAX_CATEGORY_LENGTH:
         raise ValueError(f"Category must be <= {MAX_CATEGORY_LENGTH} characters")
 
-async def _compute_helios_hash(key: str, value: str, category: str) -> str | None:
+async def _compute_helios_hash(key: str, value: str, category: str, created_at: str) -> str | None:
+    """Compute Helios content hash.  created_at must be the exact canonical string
+    that will be (or was) persisted in helios_created_at — never generate it here."""
     try:
         obj = MemoryObject(
             category=category,
-            created_at=datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.000Z"),
+            created_at=created_at,
             key=key,
             relationships=[],
             source="user",
@@ -41,7 +43,10 @@ async def store_memory(namespace_id: str, key: str, value: str,
                        expires_at: datetime | None = None) -> dict:
     _validate_input(key, value, category)
     vector, model = await emb.get_embedding(value)
-    h = await _compute_helios_hash(key, value, category)
+    # Generate the canonical timestamp once — used in the hash AND stored verbatim.
+    # TEXT column preserves the exact string; a native TIMESTAMP would reformat it.
+    helios_created_at = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.000Z")
+    h = await _compute_helios_hash(key, value, category, helios_created_at)
 
     existing = await db.fetchrow(
         "SELECT id FROM memories WHERE namespace_id=$1 AND key=$2 AND is_deleted=FALSE",
@@ -52,11 +57,12 @@ async def store_memory(namespace_id: str, key: str, value: str,
 
     row = await db.fetchrow("""
         INSERT INTO memories
-          (namespace_id, key, value, category, source, content_hash, embedding_model, embedding, expires_at)
-        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
+          (namespace_id, key, value, category, source, content_hash,
+           embedding_model, embedding, expires_at, helios_created_at)
+        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
         RETURNING *
     """, namespace_id, key, value, category, source, h, model,
-        vector, expires_at)
+        vector, expires_at, helios_created_at)
     return dict(row)
 
 async def get_memory(namespace_id: str, key: str, db) -> dict | None:
@@ -87,7 +93,12 @@ async def update_memory(namespace_id: str, key: str, value: str, db) -> dict:
     """, existing["id"], existing["value"], existing["version"])
 
     vector, model = await emb.get_embedding(value)
-    h = await _compute_helios_hash(key, value, existing["category"])
+    # created_at is IMMUTABLE per the Helios spec — reuse whatever was stored.
+    # For pre-migration rows helios_created_at is None; content_hash becomes None
+    # (those rows are already flagged as unverifiable by verify_memory_helios).
+    helios_created_at = existing.get("helios_created_at")
+    h = await _compute_helios_hash(key, value, existing["category"], helios_created_at) \
+        if helios_created_at else None
 
     row = await db.fetchrow("""
         UPDATE memories SET value=$1, content_hash=$2, embedding=$3,
@@ -204,10 +215,19 @@ async def verify_memory_helios(namespace_id: str, key: str, db) -> dict:
     mem = await get_memory(namespace_id, key, db)
     if not mem:
         return {"valid": False, "error": "Memory not found"}
+    # Rows stored before migration 005 have no helios_created_at.  The exact
+    # timestamp that was hashed was never persisted, so recomputation is
+    # impossible — report honestly rather than returning a misleading false.
+    if not mem.get("helios_created_at"):
+        return {
+            "valid": False,
+            "unverifiable": True,
+            "reason": "pre-migration record: helios_created_at was not stored",
+        }
     try:
         obj = MemoryObject(
             category=mem["category"],
-            created_at=mem["last_updated"].strftime("%Y-%m-%dT%H:%M:%S.000Z"),
+            created_at=mem["helios_created_at"],   # exact canonical string, verbatim
             key=mem["key"],
             relationships=[],
             source=mem["source"],
