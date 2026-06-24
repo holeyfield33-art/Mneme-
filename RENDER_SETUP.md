@@ -32,12 +32,12 @@ your local shell / `.env` file.
 
 | Variable | Required in Render | Example / Value | Notes |
 |----------|--------------------|-----------------|-------|
-| `DATABASE_URL` | Yes | `postgresql://your_database_url` | PostgreSQL connection string |
+| `DATABASE_URL` | Yes | `postgresql://render-db-host:5432/mneme` | PostgreSQL connection string |
 | `OPENAI_API_KEY` | Yes | `sk-...` | OpenAI key for embeddings |
 | `RESEND_API_KEY` | Yes | `re_...` | Resend API key |
 | `EMAIL_FROM` | Yes | `noreply@yourapp.com` | Sender email address |
 | `RELAY_SECRET` | Yes | strong random string | Relay bearer secret |
-| `PERSONAL_MODE` | Optional | `false` (recommended) | If `true`, `PERSONAL_API_KEY` is required |
+| `PERSONAL_MODE` | Optional | `false` | Recommended default; if `true`, `PERSONAL_API_KEY` is required |
 | `PERSONAL_API_KEY` | Optional | `mneme_p_...` or custom | Required only when `PERSONAL_MODE=true` |
 | `HELIOS_ENABLED` | Optional | `true` | Helios integrity verification |
 | `LOCAL_EMBEDDINGS_FALLBACK` | Optional | `false` | Local embeddings fallback |
@@ -47,7 +47,7 @@ your local shell / `.env` file.
 
 | Variable | Required locally | Example / Value | Notes |
 |----------|------------------|-----------------|-------|
-| `DATABASE_URL` | Yes | `postgresql://your_database_url` | PostgreSQL connection string |
+| `DATABASE_URL` | Yes | `postgresql://localhost:5432/mneme_local` | PostgreSQL connection string |
 | `OPENAI_API_KEY` | Yes | `sk-...` | OpenAI key for embeddings |
 | `RESEND_API_KEY` | Yes | `re_...` | Required for signup email flow |
 | `EMAIL_FROM` | Yes | `dev@yourdomain.com` | Sender email address |
@@ -83,7 +83,7 @@ your local shell / `.env` file.
 ### Local `.env` example
 
 ```dotenv
-DATABASE_URL=postgresql://your_database_url
+DATABASE_URL=postgresql://localhost:5432/mneme_local
 OPENAI_API_KEY=sk-your-key
 RESEND_API_KEY=re_your_key
 EMAIL_FROM=dev@yourdomain.com
