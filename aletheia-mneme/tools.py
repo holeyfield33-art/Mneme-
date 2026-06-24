@@ -1,8 +1,25 @@
 from contextvars import ContextVar
 from mcp.server.fastmcp import FastMCP
+from mcp.server.transport_security import TransportSecuritySettings
 import storage
 
-mcp = FastMCP("Aletheia Mneme")
+mcp = FastMCP(
+    "Aletheia Mneme",
+    transport_security=TransportSecuritySettings(
+        enable_dns_rebinding_protection=True,
+        allowed_hosts=[
+            "mneme-omg2.onrender.com",
+            "localhost:*",
+            "127.0.0.1:*",
+            "0.0.0.0:*",
+        ],
+        allowed_origins=[
+            "https://mneme-omg2.onrender.com",
+            "http://localhost:*",
+            "http://127.0.0.1:*",
+        ],
+    ),
+)
 
 # Set by auth middleware in main.py before each tool invocation
 current_namespace: ContextVar[dict] = ContextVar("current_namespace")
