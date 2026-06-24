@@ -57,12 +57,17 @@ class TestPersonalModeBootstrap:
         import db as database
         import env as env_module
 
+        mock_sm_ctx = MagicMock()
+        mock_sm_ctx.__aenter__ = AsyncMock(return_value=None)
+        mock_sm_ctx.__aexit__ = AsyncMock(return_value=False)
+
         with patch.object(env_module, "PERSONAL_MODE", True), \
              patch.object(env_module, "PERSONAL_API_KEY", "test_key"), \
              patch.object(env_module, "DATABASE_URL", "postgresql://x"), \
              patch("main.database.init_pool", AsyncMock()), \
              patch("main.database.close_pool", AsyncMock()), \
-             patch.object(database, "pool", mock_pool):
+             patch.object(database, "pool", mock_pool), \
+             patch("main.mcp.session_manager.run", return_value=mock_sm_ctx):
 
             for _ in range(2):
                 app_gen = main.lifespan(main.app)
@@ -88,11 +93,16 @@ class TestPersonalModeBootstrap:
         import db as database
         import env as env_module
 
+        mock_sm_ctx = MagicMock()
+        mock_sm_ctx.__aenter__ = AsyncMock(return_value=None)
+        mock_sm_ctx.__aexit__ = AsyncMock(return_value=False)
+
         with patch.object(env_module, "PERSONAL_MODE", False), \
              patch.object(env_module, "DATABASE_URL", "postgresql://x"), \
              patch("main.database.init_pool", AsyncMock()), \
              patch("main.database.close_pool", AsyncMock()), \
-             patch.object(database, "pool", mock_pool):
+             patch.object(database, "pool", mock_pool), \
+             patch("main.mcp.session_manager.run", return_value=mock_sm_ctx):
 
             app_gen = main.lifespan(main.app)
             await app_gen.__aenter__()
@@ -132,12 +142,17 @@ class TestPersonalModeBootstrap:
         import db as database
         import env as env_module
 
+        mock_sm_ctx = MagicMock()
+        mock_sm_ctx.__aenter__ = AsyncMock(return_value=None)
+        mock_sm_ctx.__aexit__ = AsyncMock(return_value=False)
+
         with patch.object(env_module, "PERSONAL_MODE", True), \
              patch.object(env_module, "PERSONAL_API_KEY", "any_key"), \
              patch.object(env_module, "DATABASE_URL", "postgresql://x"), \
              patch("main.database.init_pool", AsyncMock()), \
              patch("main.database.close_pool", AsyncMock()), \
-             patch.object(database, "pool", mock_pool):
+             patch.object(database, "pool", mock_pool), \
+             patch("main.mcp.session_manager.run", return_value=mock_sm_ctx):
 
             app_gen = main.lifespan(main.app)
             await app_gen.__aenter__()

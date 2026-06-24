@@ -34,7 +34,8 @@ async def lifespan(app: FastAPI):
             )
         log.info("personal_namespace_ready")
     log.info("app_started", product="Aletheia Mneme", version="1.0.0")
-    yield
+    async with mcp.session_manager.run():
+        yield
     await database.close_pool()
     log.info("app_stopped")
 
@@ -84,11 +85,17 @@ app.include_router(sync_router)
 # so that all MCP tool functions can access them.
 
 _mcp_app = mcp.streamable_http_app()
+# session_manager is now available after streamable_http_app() is called
 
 
 class MCPAuthMiddleware:
-    def __init__(self, app):
-        self.app = app
+    """ASGI middleware that authenticates requests before forwarding to the
+    FastMCP session manager.  We call session_manager.handle_request directly
+    rather than going through Starlette sub-app routing, so the path that
+    FastAPI strips from the mount prefix (/mcp → /) is irrelevant."""
+
+    def __init__(self):
+        pass
 
     async def __call__(self, scope, receive, send):
         if scope["type"] == "http":
@@ -96,7 +103,7 @@ class MCPAuthMiddleware:
             auth_header = headers.get(b"authorization", b"").decode()
 
             api_key = None
-            
+
             # Try Bearer token first
             if auth_header.startswith("Bearer "):
                 api_key = auth_header[7:]
@@ -109,7 +116,7 @@ class MCPAuthMiddleware:
                     vals = params.get("api_key") or params.get("key") or params.get("token")
                     if vals:
                         api_key = vals[0]
-            
+
             if api_key:
                 async with database.pool.acquire() as conn:
                     ns = await get_namespace_from_key(api_key, conn)
@@ -125,7 +132,9 @@ class MCPAuthMiddleware:
                             )
                         except Exception:
                             pass  # Don't block on counter failures
-                        await self.app(scope, receive, send)
+                        # Call the session manager directly — bypasses Starlette's
+                        # sub-app routing so the mount-prefix stripping is a non-issue.
+                        await mcp.session_manager.handle_request(scope, receive, send)
                         return
 
             # Return 401 for unauthenticated HTTP MCP requests
@@ -139,11 +148,11 @@ class MCPAuthMiddleware:
                 "body": b'{"error":"Authentication required. Provide Bearer token or ?api_key=KEY query param."}',
             })
         else:
-            # Allow websocket/lifespan through
-            await self.app(scope, receive, send)
+            # Pass non-HTTP (websocket/lifespan) scopes through to the sub-app
+            await _mcp_app(scope, receive, send)
 
 
-app.mount("/mcp", MCPAuthMiddleware(_mcp_app))
+app.mount("/mcp", MCPAuthMiddleware())
 
 
 @app.get("/health")
