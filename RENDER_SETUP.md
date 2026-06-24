@@ -32,7 +32,7 @@ your local shell / `.env` file.
 
 | Variable | Required in Render | Example / Value | Notes |
 |----------|--------------------|-----------------|-------|
-| `DATABASE_URL` | Yes | `username:password@db-host:5432/dbname` | PostgreSQL connection string (prepend `postgresql://`) |
+| `DATABASE_URL` | Yes | `postgresql://username@db-host:5432/dbname` | PostgreSQL connection string |
 | `OPENAI_API_KEY` | Yes | `sk-...` | OpenAI key for embeddings |
 | `RESEND_API_KEY` | Yes | `re_...` | Resend API key |
 | `EMAIL_FROM` | Yes | `noreply@yourapp.com` | Sender email address |
@@ -49,7 +49,7 @@ For `DATABASE_URL`, replace sample credentials/host/database with your real Post
 
 | Variable | Required locally | Example / Value | Notes |
 |----------|------------------|-----------------|-------|
-| `DATABASE_URL` | Yes | `username:password@localhost:5432/mneme` | PostgreSQL connection string (prepend `postgresql://`) |
+| `DATABASE_URL` | Yes | `postgresql://username@localhost:5432/mneme` | PostgreSQL connection string |
 | `OPENAI_API_KEY` | Yes | `sk-...` | OpenAI key for embeddings |
 | `RESEND_API_KEY` | Yes | `re_...` | Required for signup email flow |
 | `EMAIL_FROM` | Yes | `dev@yourdomain.com` | Sender email address |
@@ -87,7 +87,7 @@ For `DATABASE_URL`, replace sample credentials/host/database with your real Post
 Replace the sample `DATABASE_URL` credentials/host/database parts with your actual values.
 
 ```dotenv
-DATABASE_URL=username:password@localhost:5432/mneme # prepend postgresql://
+DATABASE_URL=postgresql://username@localhost:5432/mneme
 OPENAI_API_KEY=sk-your-key
 RESEND_API_KEY=re_your_key
 EMAIL_FROM=dev@yourdomain.com
