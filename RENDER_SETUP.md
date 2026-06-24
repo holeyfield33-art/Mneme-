@@ -27,15 +27,15 @@ The app is configured in [`render.yaml`](render.yaml). To deploy:
 
 | Variable | Render | Local | Required | Notes |
 |----------|--------|-------|----------|-------|
-| **DATABASE_URL** | Set manually | Set manually | Yes | PostgreSQL connection string used at startup |
-| **OPENAI_API_KEY** | Set manually | Set manually | Yes | Required by `embeddings.py` on import |
-| **RESEND_API_KEY** | Set manually | Set manually | Yes | Required for signup email sending |
-| **EMAIL_FROM** | Set manually | Set manually | Yes | Sender email address for Resend |
-| **RELAY_SECRET** | Set manually | Set manually | Yes | Auth token for `/relay` |
-| **PERSONAL_MODE** | Optional | Optional | No | Defaults to `false` |
-| **PERSONAL_API_KEY** | Optional | Optional | Only if `PERSONAL_MODE=true` | Leave empty otherwise |
-| **HELIOS_ENABLED** | Optional | Optional | No | Defaults to `true` |
-| **LOCAL_EMBEDDINGS_FALLBACK** | Optional | Optional | No | Defaults to `false` |
+| **DATABASE_URL** | Render dashboard | Shell / `.env` export | Yes | PostgreSQL connection string used at startup |
+| **OPENAI_API_KEY** | Render dashboard | Shell / `.env` export | Yes | Required by `embeddings.py` on import |
+| **RESEND_API_KEY** | Render dashboard | Shell / `.env` export | Yes | Required for signup email sending |
+| **EMAIL_FROM** | Render dashboard | Shell / `.env` export | Yes | Sender email address for Resend |
+| **RELAY_SECRET** | Render dashboard | Shell / `.env` export | Yes | Auth token for `/relay` |
+| **PERSONAL_MODE** | Optional dashboard var | Optional `.env` export | No | Defaults to `false` |
+| **PERSONAL_API_KEY** | Optional dashboard var | Optional `.env` export | Only if `PERSONAL_MODE=true` | Leave empty otherwise |
+| **HELIOS_ENABLED** | Optional dashboard var | Optional `.env` export | No | Defaults to `true` |
+| **LOCAL_EMBEDDINGS_FALLBACK** | Optional dashboard var | Optional `.env` export | No | Defaults to `false` |
 | **PORT** | Auto-provided by Render | Not needed | No | Render injects this automatically; local dev can keep `8000` in the uvicorn command |
 
 ## Required Environment Variables
