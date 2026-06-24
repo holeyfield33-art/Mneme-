@@ -32,7 +32,7 @@ your local shell / `.env` file.
 
 | Variable | Required in Render | Example / Value | Notes |
 |----------|--------------------|-----------------|-------|
-| `DATABASE_URL` | Yes | `postgres://<USER>:<PASS>@<HOST>:5432/<DB>` | PostgreSQL connection string |
+| `DATABASE_URL` | Yes | `******db-host:5432/dbname` | PostgreSQL connection string |
 | `OPENAI_API_KEY` | Yes | `sk-...` | OpenAI key for embeddings |
 | `RESEND_API_KEY` | Yes | `re_...` | Resend API key |
 | `EMAIL_FROM` | Yes | `noreply@yourapp.com` | Sender email address |
@@ -43,11 +43,13 @@ your local shell / `.env` file.
 | `LOCAL_EMBEDDINGS_FALLBACK` | Optional | `false` | Local embeddings fallback |
 | `PORT` | Render-managed | auto-set by Render | Used by start command (`--port $PORT`) |
 
+For `DATABASE_URL`, replace sample credentials/host/database with your real PostgreSQL values.
+
 ### Local development environment variables
 
 | Variable | Required locally | Example / Value | Notes |
 |----------|------------------|-----------------|-------|
-| `DATABASE_URL` | Yes | `postgres://<USER>:<PASS>@localhost:5432/mneme` | PostgreSQL connection string |
+| `DATABASE_URL` | Yes | `******localhost:5432/mneme` | PostgreSQL connection string |
 | `OPENAI_API_KEY` | Yes | `sk-...` | OpenAI key for embeddings |
 | `RESEND_API_KEY` | Yes | `re_...` | Required for signup email flow |
 | `EMAIL_FROM` | Yes | `dev@yourdomain.com` | Sender email address |
@@ -82,8 +84,10 @@ your local shell / `.env` file.
 
 ### Local `.env` example
 
+Replace the sample `DATABASE_URL` credentials/host/database parts with your actual values.
+
 ```dotenv
-DATABASE_URL=postgres://<USER>:<PASS>@localhost:5432/mneme
+DATABASE_URL=******localhost:5432/mneme
 OPENAI_API_KEY=sk-your-key
 RESEND_API_KEY=re_your_key
 EMAIL_FROM=dev@yourdomain.com
