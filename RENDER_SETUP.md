@@ -43,8 +43,6 @@ your local shell / `.env` file.
 | `LOCAL_EMBEDDINGS_FALLBACK` | Optional | `false` | Local embeddings fallback |
 | `PORT` | Render-managed | auto-set by Render | Used by start command (`--port $PORT`) |
 
-For `DATABASE_URL`, replace sample credentials/host/database with your real PostgreSQL values.
-
 ### Local development environment variables
 
 | Variable | Required locally | Example / Value | Notes |
@@ -83,8 +81,6 @@ For `DATABASE_URL`, replace sample credentials/host/database with your real Post
 - **RELAY_SECRET** — Shared secret for relay operations (generate a strong random string)
 
 ### Local `.env` example
-
-Replace the sample `DATABASE_URL` credentials/host/database parts with your actual values.
 
 ```dotenv
 DATABASE_URL=postgresql://your_database_url
