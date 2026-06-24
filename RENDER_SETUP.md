@@ -23,9 +23,39 @@ The app is configured in [`aletheia-mneme/render.yaml`](aletheia-mneme/render.ya
 | **Start Command** | `cd aletheia-mneme && uvicorn main:app --host 0.0.0.0 --port $PORT` |
 | **Root Directory** | `aletheia-mneme` |
 
-## Required Environment Variables
+## Environment Variable Setup
 
-Set these in Render's **Environment** tab (mark sensitive ones as **secrets**):
+Set these in Render's **Environment** tab (mark sensitive ones as **secrets**), or in
+your local shell / `.env` file.
+
+### Render environment variables
+
+| Variable | Required in Render | Example / Value | Notes |
+|----------|--------------------|-----------------|-------|
+| `DATABASE_URL` | Yes | `postgresql://render-db-host:5432/mneme` | PostgreSQL connection string |
+| `OPENAI_API_KEY` | Yes | `sk-...` | OpenAI key for embeddings |
+| `RESEND_API_KEY` | Yes | `re_...` | Resend API key |
+| `EMAIL_FROM` | Yes | `noreply@yourapp.com` | Sender email address |
+| `RELAY_SECRET` | Yes | strong random string | Relay bearer secret |
+| `PERSONAL_MODE` | Optional | `false` | Recommended default; if `true`, `PERSONAL_API_KEY` is required |
+| `PERSONAL_API_KEY` | Conditional | `your_personal_api_key` | Required only when `PERSONAL_MODE=true` |
+| `HELIOS_ENABLED` | Optional | `true` | Helios integrity verification |
+| `LOCAL_EMBEDDINGS_FALLBACK` | Optional | `false` | Local embeddings fallback |
+| `PORT` | Render-managed | auto-set by Render | Used by start command (`--port $PORT`) |
+
+### Local development environment variables
+
+| Variable | Required locally | Example / Value | Notes |
+|----------|------------------|-----------------|-------|
+| `DATABASE_URL` | Yes | `postgresql://localhost:5432/mneme_local` | PostgreSQL connection string |
+| `OPENAI_API_KEY` | Yes | `sk-...` | OpenAI key for embeddings |
+| `RESEND_API_KEY` | Yes | `re_...` | Required for signup email flow |
+| `EMAIL_FROM` | Yes | `dev@yourdomain.com` | Sender email address |
+| `RELAY_SECRET` | Yes | strong random string | Relay endpoint auth |
+| `PERSONAL_MODE` | Optional | `false` | Enable single-user mode |
+| `PERSONAL_API_KEY` | Conditional | custom string | Required when `PERSONAL_MODE=true` |
+| `HELIOS_ENABLED` | Optional | `true` | Enable/disable Helios hashing |
+| `LOCAL_EMBEDDINGS_FALLBACK` | Optional | `false` | Local embeddings fallback |
 
 ### Database
 
@@ -50,14 +80,19 @@ Set these in Render's **Environment** tab (mark sensitive ones as **secrets**):
 
 - **RELAY_SECRET** — Shared secret for relay operations (generate a strong random string)
 
-## Optional Environment Variables
+### Local `.env` example
 
-| Variable | Default | Purpose |
-|----------|---------|---------|
-| **PERSONAL_MODE** | `false` | Enable single-user mode (requires PERSONAL_API_KEY) |
-| **PERSONAL_API_KEY** | empty | API key for personal mode |
-| **HELIOS_ENABLED** | `true` | Enable Helios verification system |
-| **LOCAL_EMBEDDINGS_FALLBACK** | `false` | Use local embeddings fallback (slower, no API cost) |
+```dotenv
+DATABASE_URL=postgresql://localhost:5432/mneme_local
+OPENAI_API_KEY=sk-your-key
+RESEND_API_KEY=re_your_key
+EMAIL_FROM=dev@yourdomain.com
+RELAY_SECRET=replace_with_long_random_secret
+PERSONAL_MODE=false
+# PERSONAL_API_KEY=your_personal_key_if_PERSONAL_MODE_true
+HELIOS_ENABLED=true
+LOCAL_EMBEDDINGS_FALLBACK=false
+```
 
 ## Database Setup Steps
 
