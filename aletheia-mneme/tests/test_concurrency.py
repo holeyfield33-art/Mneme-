@@ -18,7 +18,10 @@ import storage
 
 def _setup_context(namespace: dict, db):
     tools.current_namespace.set(namespace)
-    tools.current_db.set(db)
+    mock_pool = MagicMock()
+    mock_pool.acquire.return_value.__aenter__ = AsyncMock(return_value=db)
+    mock_pool.acquire.return_value.__aexit__ = AsyncMock(return_value=False)
+    tools.database.pool = mock_pool
 
 
 class TestConcurrentStores:

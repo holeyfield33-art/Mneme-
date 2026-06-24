@@ -14,7 +14,7 @@ from signup import router as signup_router
 from relay import router as relay_router
 from sync import router as sync_router
 from auth import get_namespace_from_key
-from tools import mcp, current_namespace, current_db
+from tools import mcp, current_namespace
 
 log = structlog.get_logger()
 limiter = Limiter(key_func=get_remote_address)
@@ -118,12 +118,11 @@ class MCPAuthMiddleware:
                         api_key = vals[0]
 
             if api_key:
+                ns_dict = None
                 async with database.pool.acquire() as conn:
                     ns = await get_namespace_from_key(api_key, conn)
                     if ns:
                         ns_dict = dict(ns) if not isinstance(ns, dict) else ns
-                        current_namespace.set(ns_dict)
-                        current_db.set(conn)
                         try:
                             await conn.execute(
                                 "UPDATE namespaces SET request_count_current_month = "
@@ -132,10 +131,12 @@ class MCPAuthMiddleware:
                             )
                         except Exception:
                             pass  # Don't block on counter failures
-                        # Call the session manager directly — bypasses Starlette's
-                        # sub-app routing so the mount-prefix stripping is a non-issue.
-                        await mcp.session_manager.handle_request(scope, receive, send)
-                        return
+                # Connection released here, BEFORE handle_request, so tools
+                # are not competing with a connection held by this middleware.
+                if ns_dict:
+                    current_namespace.set(ns_dict)
+                    await mcp.session_manager.handle_request(scope, receive, send)
+                    return
 
             # Return 401 for unauthenticated HTTP MCP requests
             await send({

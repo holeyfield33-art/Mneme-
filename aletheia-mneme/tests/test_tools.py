@@ -6,7 +6,7 @@ Tests:
   - Edge cases: missing namespace, empty results
 """
 import pytest
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 from tests import MockDB, MockRecord
 from datetime import datetime, timezone
 from contextvars import copy_context
@@ -15,9 +15,14 @@ import tools
 
 
 def _setup_context(namespace: dict, db):
-    """Set contextvars for tool execution."""
+    """Set contextvars and mock the DB pool for tool execution."""
     tools.current_namespace.set(namespace)
-    tools.current_db.set(db)
+    # Tools now acquire their own connection per call; mock the pool so
+    # each acquire() yields the provided MockDB instance.
+    mock_pool = MagicMock()
+    mock_pool.acquire.return_value.__aenter__ = AsyncMock(return_value=db)
+    mock_pool.acquire.return_value.__aexit__ = AsyncMock(return_value=False)
+    tools.database.pool = mock_pool
 
 
 # ── Free Tool Access ─────────────────────────────────────────
