@@ -240,6 +240,10 @@ Every API key has full access to all 16 tools. There are no tiers or paywalls.
 | `HELIOS_ENABLED` | No | Enable Helios hashing (default: `true`) |
 | `LOCAL_EMBEDDINGS_FALLBACK` | No | Use local model instead of OpenAI (default: `false`) |
 
+Complete Render + local setup instructions live in [`RENDER_SETUP.md`](RENDER_SETUP.md),
+including the full env matrix and the ready-to-copy template at
+[`aletheia-mneme/.env.example`](aletheia-mneme/.env.example).
+
 ---
 
 ## Development
