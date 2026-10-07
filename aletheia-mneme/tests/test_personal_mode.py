@@ -8,8 +8,21 @@ Tests:
   - bootstrap row has tier='premium' and is_active=TRUE
 """
 import pytest
+from contextlib import asynccontextmanager
 from unittest.mock import AsyncMock, MagicMock, patch, call
 from tests import MockDB
+
+
+@asynccontextmanager
+async def _mcp_lifespan_stub():
+    """These tests isolate database bootstrap behavior from the MCP manager."""
+    yield
+
+
+@pytest.fixture(autouse=True)
+def isolate_mcp_lifespan(monkeypatch):
+    import main
+    monkeypatch.setattr(main.mcp.session_manager, "run", _mcp_lifespan_stub)
 
 
 class TestPersonalModeBootstrap:

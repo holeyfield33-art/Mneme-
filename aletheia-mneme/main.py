@@ -34,9 +34,12 @@ async def lifespan(app: FastAPI):
             )
         log.info("personal_namespace_ready")
     log.info("app_started", product="Aletheia Mneme", version="1.0.0")
-    yield
-    await database.close_pool()
-    log.info("app_stopped")
+    try:
+        async with mcp.session_manager.run():
+            yield
+    finally:
+        await database.close_pool()
+        log.info("app_stopped")
 
 
 app = FastAPI(
@@ -75,7 +78,8 @@ async def global_exception_handler(request: Request, exc: Exception):
 if not env.PERSONAL_MODE:
     app.include_router(signup_router)
 app.include_router(relay_router)
-app.include_router(sync_router)
+if not env.OFFLINE_MODE:
+    app.include_router(sync_router)
 
 
 # ── MCP Auth Middleware ──────────────────────────────────────
@@ -115,8 +119,8 @@ class MCPAuthMiddleware:
                     ns = await get_namespace_from_key(api_key, conn)
                     if ns:
                         ns_dict = dict(ns) if not isinstance(ns, dict) else ns
-                        current_namespace.set(ns_dict)
-                        current_db.set(conn)
+                        ns_token = current_namespace.set(ns_dict)
+                        db_token = current_db.set(conn)
                         try:
                             await conn.execute(
                                 "UPDATE namespaces SET request_count_current_month = "
@@ -125,7 +129,11 @@ class MCPAuthMiddleware:
                             )
                         except Exception:
                             pass  # Don't block on counter failures
-                        await self.app(scope, receive, send)
+                        try:
+                            await self.app(scope, receive, send)
+                        finally:
+                            current_db.reset(db_token)
+                            current_namespace.reset(ns_token)
                         return
 
             # Return 401 for unauthenticated HTTP MCP requests
@@ -154,4 +162,6 @@ async def health():
         "product": "Aletheia Mneme",
         "version": "1.0.0",
         "database": "connected" if db_ok else "disconnected",
+        "offline": env.OFFLINE_MODE,
+        "search_mode": "keyword" if env.OFFLINE_MODE else "embeddings",
     }

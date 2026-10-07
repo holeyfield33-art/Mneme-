@@ -1,10 +1,11 @@
 import resend
 import env
 
-resend.api_key = env.RESEND_API_KEY
-
 def _send(to: str, subject: str, text: str) -> None:
+    if env.OFFLINE_MODE:
+        raise RuntimeError("Email is disabled in offline mode")
     try:
+        resend.api_key = env.RESEND_API_KEY
         resend.Emails.send({
             "from": env.EMAIL_FROM,
             "to": to,

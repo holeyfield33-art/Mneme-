@@ -189,7 +189,7 @@ Every API key has full access to all 16 tools. There are no tiers or paywalls.
 
 | Tool | Description |
 |------|-------------|
-| `store_memory` | Store a memory with key, value, category |
+| `store_memory` | Store a memory with key, value, category, and user/agent attribution |
 | `get_memory` | Retrieve a memory by key |
 | `list_memories` | List memories |
 | `search_memory` | Keyword full-text search |
@@ -239,10 +239,13 @@ Every API key has full access to all 16 tools. There are no tiers or paywalls.
 | `PERSONAL_API_KEY` | No | API key for personal mode |
 | `HELIOS_ENABLED` | No | Enable Helios hashing (default: `true`) |
 | `LOCAL_EMBEDDINGS_FALLBACK` | No | Use local model instead of OpenAI (default: `false`) |
+| `MNEME_OFFLINE` | No | Disable remote embeddings, model downloads, email and cloud sync (default: `false`) |
 
 Complete Render + local setup instructions live in [`RENDER_SETUP.md`](RENDER_SETUP.md),
 including the full env matrix and the ready-to-copy template at
 [`aletheia-mneme/.env.example`](aletheia-mneme/.env.example).
+
+For the verified Windows private/offline profile, use [`docs/LOCAL-SETUP.md`](docs/LOCAL-SETUP.md).
 
 ---
 

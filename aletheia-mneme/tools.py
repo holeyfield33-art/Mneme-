@@ -1,8 +1,10 @@
 from contextvars import ContextVar
+from typing import Literal
 from mcp.server.fastmcp import FastMCP
 import storage
 
-mcp = FastMCP("Aletheia Mneme")
+mcp = FastMCP("Aletheia Mneme", stateless_http=True, json_response=True,
+              streamable_http_path="/")
 
 # Set by auth middleware in main.py before each tool invocation
 current_namespace: ContextVar[dict] = ContextVar("current_namespace")
@@ -20,10 +22,17 @@ def _db():
 # ── MEMORY TOOLS ────────────────────────────────────────────
 
 @mcp.tool()
-async def store_memory(key: str, value: str, category: str = "general") -> dict:
-    """Store a memory."""
+async def store_memory(
+    key: str,
+    value: str,
+    category: str = "general",
+    attribution: Literal["agent", "user"] = "agent",
+) -> dict:
+    """Store a memory with explicit author attribution."""
     ns = _ns()
-    return await storage.store_memory(ns["id"], key, value, category, "user", _db())
+    return await storage.store_memory(
+        ns["id"], key, value, category, attribution, _db()
+    )
 
 
 @mcp.tool()
@@ -146,6 +155,9 @@ async def verify_memory(key: str) -> dict:
 async def cloud_sync(target_url: str, direction: str = "push",
                      conflict_strategy: str = "highest_version_wins") -> dict:
     """Push or pull memories to another Mneme instance."""
+    import env
+    if env.OFFLINE_MODE:
+        raise ValueError("Cloud sync is disabled in offline mode")
     from sync import _validate_sync_url, VALID_CONFLICT_STRATEGIES
     _validate_sync_url(target_url)
     if conflict_strategy not in VALID_CONFLICT_STRATEGIES:

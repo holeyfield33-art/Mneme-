@@ -106,8 +106,15 @@ class TestStoreMemory:
 
         with patch("storage.emb") as mock_emb:
             mock_emb.get_embedding = AsyncMock(return_value=(None, "none"))
-            result = await storage.store_memory("ns_1", "test/key", "new value", "general", "user", db)
+            result = await storage.store_memory(
+                "ns_1", "test/key", "new value", "general", "agent", db
+            )
             assert result["version"] == 2
+            update = next(
+                query for query in db.queries
+                if query[0] == "fetchrow" and "UPDATE memories" in query[1]
+            )
+            assert update[2][-1] == "agent"
 
 
 # ── Get Memory ───────────────────────────────────────────────

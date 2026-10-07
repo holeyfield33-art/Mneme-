@@ -10,7 +10,7 @@ python-dotenv
 structlog
 slowapi
 httpx
-mcp
+mcp<2
 pytest
 pytest-asyncio
 pytest-cov

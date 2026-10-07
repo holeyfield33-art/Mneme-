@@ -1,7 +1,7 @@
 import env
 from openai import AsyncOpenAI
 
-_openai = AsyncOpenAI(api_key=env.OPENAI_API_KEY)
+_openai = None
 _local_model = None
 
 def get_local_model():
@@ -11,12 +11,18 @@ def get_local_model():
         _local_model = SentenceTransformer("all-MiniLM-L6-v2")
     return _local_model
 
-async def get_embedding(text: str) -> tuple[list[float], str]:
+async def get_embedding(text: str) -> tuple[list[float] | None, str]:
     """Returns (vector, model_name). Never raises — returns (None, 'none') on failure."""
+    global _openai
+    # Explicit offline mode never initializes a provider or downloads a model.
+    if env.OFFLINE_MODE:
+        return None, "none"
     try:
         if env.LOCAL_EMBEDDINGS:
             model = get_local_model()
             return model.encode(text).tolist(), "all-MiniLM-L6-v2"
+        if _openai is None:
+            _openai = AsyncOpenAI(api_key=env.OPENAI_API_KEY)
         response = await _openai.embeddings.create(
             input=text[:8000],
             model="text-embedding-3-small"

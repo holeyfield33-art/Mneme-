@@ -21,14 +21,16 @@ def _validate_input(key: str, value: str, category: str = "general"):
     if category and len(category) > MAX_CATEGORY_LENGTH:
         raise ValueError(f"Category must be <= {MAX_CATEGORY_LENGTH} characters")
 
-async def _compute_helios_hash(key: str, value: str, category: str) -> str | None:
+async def _compute_helios_hash(key: str, value: str, category: str,
+                              timestamp: datetime | None = None,
+                              source: str = "user") -> str | None:
     try:
         obj = MemoryObject(
             category=category,
-            created_at=datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.000Z"),
+            created_at=(timestamp or datetime.now(timezone.utc)).strftime("%Y-%m-%dT%H:%M:%S.000Z"),
             key=key,
             relationships=[],
-            source="user",
+            source=source,
             value=value,
         )
         return content_hash(obj)
@@ -41,22 +43,23 @@ async def store_memory(namespace_id: str, key: str, value: str,
                        expires_at: datetime | None = None) -> dict:
     _validate_input(key, value, category)
     vector, model = await emb.get_embedding(value)
-    h = await _compute_helios_hash(key, value, category)
+    timestamp = datetime.now(timezone.utc).replace(tzinfo=None)
+    h = await _compute_helios_hash(key, value, category, timestamp, source)
 
     existing = await db.fetchrow(
         "SELECT id FROM memories WHERE namespace_id=$1 AND key=$2 AND is_deleted=FALSE",
         namespace_id, key
     )
     if existing:
-        return await update_memory(namespace_id, key, value, db)
+        return await update_memory(namespace_id, key, value, db, source=source)
 
     row = await db.fetchrow("""
         INSERT INTO memories
-          (namespace_id, key, value, category, source, content_hash, embedding_model, embedding, expires_at)
-        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
+          (namespace_id, key, value, category, source, content_hash, embedding_model, embedding, expires_at, last_updated)
+        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
         RETURNING *
     """, namespace_id, key, value, category, source, h, model,
-        vector, expires_at)
+        vector, expires_at, timestamp)
     return dict(row)
 
 async def get_memory(namespace_id: str, key: str, db) -> dict | None:
@@ -72,7 +75,8 @@ async def get_memory(namespace_id: str, key: str, db) -> dict | None:
         )
     return dict(row) if row else None
 
-async def update_memory(namespace_id: str, key: str, value: str, db) -> dict:
+async def update_memory(namespace_id: str, key: str, value: str, db,
+                        source: str | None = None) -> dict:
     _validate_input(key, value)
     existing = await db.fetchrow(
         "SELECT * FROM memories WHERE namespace_id=$1 AND key=$2 AND is_deleted=FALSE",
@@ -87,13 +91,16 @@ async def update_memory(namespace_id: str, key: str, value: str, db) -> dict:
     """, existing["id"], existing["value"], existing["version"])
 
     vector, model = await emb.get_embedding(value)
-    h = await _compute_helios_hash(key, value, existing["category"])
+    timestamp = datetime.now(timezone.utc).replace(tzinfo=None)
+    effective_source = source or existing.get("source", "user")
+    h = await _compute_helios_hash(key, value, existing["category"], timestamp,
+                                  effective_source)
 
     row = await db.fetchrow("""
         UPDATE memories SET value=$1, content_hash=$2, embedding=$3,
-          embedding_model=$4, version=version+1, last_updated=NOW()
+          embedding_model=$4, version=version+1, last_updated=$6, source=$7
         WHERE id=$5 RETURNING *
-    """, value, h, vector, model, existing["id"])
+    """, value, h, vector, model, existing["id"], timestamp, effective_source)
     return dict(row)
 
 async def forget_memory(namespace_id: str, key: str, db) -> bool:

@@ -11,6 +11,7 @@ _BOOL_MAP = {
     "PERSONAL_MODE": ("PERSONAL_MODE", "false"),
     "HELIOS_ENABLED": ("HELIOS_ENABLED", "true"),
     "LOCAL_EMBEDDINGS": ("LOCAL_EMBEDDINGS_FALLBACK", "false"),
+    "OFFLINE_MODE": ("MNEME_OFFLINE", "false"),
 }
 
 

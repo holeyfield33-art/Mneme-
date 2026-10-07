@@ -46,7 +46,7 @@ Part of the **Aletheia Sovereign Systems** product family — the memory layer o
 
 | Tool | Description |
 |------|-------------|
-| `store_memory` | Store a memory with key, value, category |
+| `store_memory` | Store a memory with key, value, category, and user/agent attribution |
 | `get_memory` | Retrieve a memory by key |
 | `list_memories` | List memories |
 | `search_memory` | Keyword full-text search |
@@ -111,10 +111,14 @@ Test vectors included in `test_vectors/vectors.json`.
 | `PERSONAL_API_KEY` | No | API key for personal mode |
 | `HELIOS_ENABLED` | No | Enable Helios hashing (default: true) |
 | `LOCAL_EMBEDDINGS_FALLBACK` | No | Use local model instead of OpenAI |
+| `MNEME_OFFLINE` | No | Disable remote embeddings, model downloads, email and cloud sync |
 
 For the complete Render + local setup checklist, see
 [`../RENDER_SETUP.md`](../RENDER_SETUP.md) and copy
 [`./.env.example`](.env.example) for local development.
+
+For the verified Windows private/offline profile, see
+[`../docs/LOCAL-SETUP.md`](../docs/LOCAL-SETUP.md).
 
 ## Development
 

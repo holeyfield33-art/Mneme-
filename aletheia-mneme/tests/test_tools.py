@@ -29,9 +29,24 @@ class TestFreeTools:
         ns = {"id": "ns_free", "tier": "free"}
         _setup_context(ns, db)
         with patch("tools.storage.store_memory", new_callable=AsyncMock,
-                    return_value={"key": "k", "value": "v"}):
+                    return_value={"key": "k", "value": "v"}) as mock_store:
             result = await tools.store_memory("k", "v")
             assert result["key"] == "k"
+            mock_store.assert_awaited_once_with(
+                "ns_free", "k", "v", "general", "agent", db
+            )
+
+    @pytest.mark.asyncio
+    async def test_store_memory_accepts_user_attribution(self):
+        db = MockDB()
+        ns = {"id": "ns_free", "tier": "free"}
+        _setup_context(ns, db)
+        with patch("tools.storage.store_memory", new_callable=AsyncMock,
+                    return_value={"key": "prompt"}) as mock_store:
+            await tools.store_memory("prompt", "exact text", "prompt", "user")
+            mock_store.assert_awaited_once_with(
+                "ns_free", "prompt", "exact text", "prompt", "user", db
+            )
 
     @pytest.mark.asyncio
     async def test_get_memory(self):

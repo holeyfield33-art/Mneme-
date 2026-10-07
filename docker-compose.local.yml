@@ -1,0 +1,21 @@
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: mneme-local-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: mneme
+      POSTGRES_PASSWORD: mneme_local_dev
+      POSTGRES_DB: mneme
+    ports:
+      - "127.0.0.1:5433:5432"
+    volumes:
+      - mneme-local-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U mneme -d mneme"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+volumes:
+  mneme-local-postgres-data:
